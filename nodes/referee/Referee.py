@@ -1,7 +1,7 @@
 from PyQt4 import QtGui, QtCore
 
 import rospy, rostopic, roslaunch
-from soccer_ref.msg import GameState
+from soccerref.msg import GameState
 from geometry_msgs.msg import Pose2D
 
 from Team import Team
@@ -134,7 +134,7 @@ class Referee(object):
 
         # Populate team names (under the fragile assumption that all team names are names of directories)
         def validTeam(obj):
-            return os.path.isdir(os.path.join(catkin_ws_src_folder, obj)) and obj not in ['soccersim', 'soccer_ref']
+            return os.path.isdir(os.path.join(catkin_ws_src_folder, obj)) and obj not in ['soccersim', 'soccerref']
 
         team_list = [o for o in os.listdir(catkin_ws_src_folder) if validTeam(o)]
         self.ui.cmb_teams_home.addItems(team_list)
