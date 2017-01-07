@@ -268,11 +268,6 @@ class Referee(object):
     # =========================================================================
 
     def _btn_play(self):
-        # toggle between 'Play' and 'Pause'
-        # start/stop timer again
-        # GameState.play = true/false
-        
-
         if self.game_state.play:
             # Pause the game and stop the timer
             self.game_state.play = False
@@ -280,7 +275,6 @@ class Referee(object):
 
             # Update the UI
             self.ui.btn_play.setText('Play')
-
 
         else:
             # Play the game and start the timer
@@ -364,7 +358,8 @@ class Referee(object):
             self.game_started = False
 
             if self.sim_mode:
-                os.killpg(os.getpgid(self.process.pid), signal.SIGTERM)  # Send the signal to all the process groups
+                # Send a kill signal to all the process groups
+                os.killpg(os.getpgid(self.process.pid), signal.SIGTERM)
 
             # reset clock, stop play
             self.ui.stop_timer()                
