@@ -185,19 +185,19 @@ class Referee(object):
 
     def _handle_vision_ball(self, msg):
         if msg.x > goal_threshold and not self.ballIsStillInGoal:
-            self.game_state.homescore += 1
+            self.game_state.home_score += 1
 
             # update the score UI
-            self.home.ui.update_score(self.game_state.homescore)
+            self.home.ui.update_score(self.game_state.home_score)
 
             # flag so that we only count the goal once
             self.ballIsStillInGoal = True
 
         elif msg.x < -goal_threshold and not self.ballIsStillInGoal:
-            self.game_state.awayscore += 1
+            self.game_state.away_score += 1
 
             # update the score UI
-            self.away.ui.update_score(self.game_state.awayscore)
+            self.away.ui.update_score(self.game_state.away_score)
 
             # flag so that we only count the goal once
             self.ballIsStillInGoal = True
@@ -294,12 +294,12 @@ class Referee(object):
     def _handle_score(self, home=True, inc=True):
         # update the global state
         if home:
-            self.game_state.homescore += 1 if inc else -1
+            self.game_state.home_score += 1 if inc else -1
 
             # update the score UI
-            self.home.ui.update_score(self.game_state.homescore)
+            self.home.ui.update_score(self.game_state.home_score)
         else:
-            self.game_state.awayscore += 1 if inc else -1
+            self.game_state.away_score += 1 if inc else -1
 
             # update the score UI
-            self.away.ui.update_score(self.game_state.awayscore)
+            self.away.ui.update_score(self.game_state.away_score)
