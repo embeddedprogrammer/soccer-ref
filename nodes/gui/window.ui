@@ -1,0 +1,534 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>MainWindow</class>
+ <widget class="QMainWindow" name="MainWindow">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>722</width>
+    <height>527</height>
+   </rect>
+  </property>
+  <property name="sizePolicy">
+   <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+    <horstretch>0</horstretch>
+    <verstretch>0</verstretch>
+   </sizepolicy>
+  </property>
+  <property name="windowTitle">
+   <string>Robot Soccer Referee</string>
+  </property>
+  <widget class="QWidget" name="centralwidget">
+   <widget class="QPushButton" name="btngoal_inc_away">
+    <property name="geometry">
+     <rect>
+      <x>574</x>
+      <y>170</y>
+      <width>41</width>
+      <height>41</height>
+     </rect>
+    </property>
+    <property name="font">
+     <font>
+      <pointsize>26</pointsize>
+      <kerning>true</kerning>
+     </font>
+    </property>
+    <property name="text">
+     <string>+</string>
+    </property>
+   </widget>
+   <widget class="QPushButton" name="btngoal_dec_away">
+    <property name="geometry">
+     <rect>
+      <x>524</x>
+      <y>170</y>
+      <width>41</width>
+      <height>41</height>
+     </rect>
+    </property>
+    <property name="font">
+     <font>
+      <pointsize>26</pointsize>
+     </font>
+    </property>
+    <property name="text">
+     <string>-</string>
+    </property>
+   </widget>
+   <widget class="QPushButton" name="btngoal_inc_home">
+    <property name="geometry">
+     <rect>
+      <x>154</x>
+      <y>170</y>
+      <width>41</width>
+      <height>41</height>
+     </rect>
+    </property>
+    <property name="font">
+     <font>
+      <pointsize>26</pointsize>
+      <weight>50</weight>
+      <bold>false</bold>
+     </font>
+    </property>
+    <property name="text">
+     <string>+</string>
+    </property>
+   </widget>
+   <widget class="QPushButton" name="btngoal_dec_home">
+    <property name="geometry">
+     <rect>
+      <x>104</x>
+      <y>170</y>
+      <width>41</width>
+      <height>41</height>
+     </rect>
+    </property>
+    <property name="font">
+     <font>
+      <pointsize>26</pointsize>
+     </font>
+    </property>
+    <property name="text">
+     <string>-</string>
+    </property>
+   </widget>
+   <widget class="QPushButton" name="btnPlay">
+    <property name="geometry">
+     <rect>
+      <x>240</x>
+      <y>170</y>
+      <width>111</width>
+      <height>41</height>
+     </rect>
+    </property>
+    <property name="font">
+     <font>
+      <pointsize>12</pointsize>
+     </font>
+    </property>
+    <property name="text">
+     <string>Play</string>
+    </property>
+   </widget>
+   <widget class="QPushButton" name="btnResetField">
+    <property name="geometry">
+     <rect>
+      <x>360</x>
+      <y>170</y>
+      <width>111</width>
+      <height>41</height>
+     </rect>
+    </property>
+    <property name="font">
+     <font>
+      <pointsize>12</pointsize>
+     </font>
+    </property>
+    <property name="text">
+     <string>Reset Field</string>
+    </property>
+   </widget>
+   <widget class="QPushButton" name="btnStartGame">
+    <property name="geometry">
+     <rect>
+      <x>600</x>
+      <y>440</y>
+      <width>111</width>
+      <height>41</height>
+     </rect>
+    </property>
+    <property name="font">
+     <font>
+      <pointsize>12</pointsize>
+     </font>
+    </property>
+    <property name="text">
+     <string>Start Game</string>
+    </property>
+   </widget>
+   <widget class="QPushButton" name="btnNextHalf">
+    <property name="geometry">
+     <rect>
+      <x>240</x>
+      <y>220</y>
+      <width>231</width>
+      <height>41</height>
+     </rect>
+    </property>
+    <property name="font">
+     <font>
+      <pointsize>12</pointsize>
+     </font>
+    </property>
+    <property name="text">
+     <string>Next Half</string>
+    </property>
+   </widget>
+   <widget class="QFrame" name="frameHome">
+    <property name="enabled">
+     <bool>true</bool>
+    </property>
+    <property name="geometry">
+     <rect>
+      <x>10</x>
+      <y>310</y>
+      <width>341</width>
+      <height>121</height>
+     </rect>
+    </property>
+    <property name="frameShape">
+     <enum>QFrame::StyledPanel</enum>
+    </property>
+    <property name="frameShadow">
+     <enum>QFrame::Raised</enum>
+    </property>
+    <widget class="QGroupBox" name="groupBox">
+     <property name="enabled">
+      <bool>true</bool>
+     </property>
+     <property name="geometry">
+      <rect>
+       <x>10</x>
+       <y>10</y>
+       <width>331</width>
+       <height>101</height>
+      </rect>
+     </property>
+     <property name="title">
+      <string>Home Team</string>
+     </property>
+     <widget class="QComboBox" name="cmbHomeTeams">
+      <property name="geometry">
+       <rect>
+        <x>90</x>
+        <y>30</y>
+        <width>231</width>
+        <height>22</height>
+       </rect>
+      </property>
+     </widget>
+     <widget class="QLabel" name="label_7">
+      <property name="geometry">
+       <rect>
+        <x>10</x>
+        <y>34</y>
+        <width>71</width>
+        <height>16</height>
+       </rect>
+      </property>
+      <property name="text">
+       <string>team:</string>
+      </property>
+     </widget>
+     <widget class="QLabel" name="label_8">
+      <property name="geometry">
+       <rect>
+        <x>10</x>
+        <y>64</y>
+        <width>71</width>
+        <height>16</height>
+       </rect>
+      </property>
+      <property name="text">
+       <string># of bots:</string>
+      </property>
+     </widget>
+     <widget class="QSpinBox" name="spinHomeBots">
+      <property name="geometry">
+       <rect>
+        <x>90</x>
+        <y>60</y>
+        <width>47</width>
+        <height>23</height>
+       </rect>
+      </property>
+      <property name="minimum">
+       <number>1</number>
+      </property>
+      <property name="maximum">
+       <number>5</number>
+      </property>
+     </widget>
+    </widget>
+   </widget>
+   <widget class="QFrame" name="frameAway">
+    <property name="geometry">
+     <rect>
+      <x>360</x>
+      <y>310</y>
+      <width>351</width>
+      <height>121</height>
+     </rect>
+    </property>
+    <property name="frameShape">
+     <enum>QFrame::StyledPanel</enum>
+    </property>
+    <property name="frameShadow">
+     <enum>QFrame::Raised</enum>
+    </property>
+    <widget class="QGroupBox" name="groupBox_2">
+     <property name="geometry">
+      <rect>
+       <x>10</x>
+       <y>10</y>
+       <width>341</width>
+       <height>101</height>
+      </rect>
+     </property>
+     <property name="title">
+      <string>Away Team</string>
+     </property>
+     <widget class="QLabel" name="label_10">
+      <property name="geometry">
+       <rect>
+        <x>10</x>
+        <y>64</y>
+        <width>71</width>
+        <height>16</height>
+       </rect>
+      </property>
+      <property name="text">
+       <string># of bots:</string>
+      </property>
+     </widget>
+     <widget class="QLabel" name="label_9">
+      <property name="geometry">
+       <rect>
+        <x>10</x>
+        <y>34</y>
+        <width>71</width>
+        <height>16</height>
+       </rect>
+      </property>
+      <property name="text">
+       <string>team:</string>
+      </property>
+     </widget>
+     <widget class="QComboBox" name="cmbAwayTeams">
+      <property name="geometry">
+       <rect>
+        <x>90</x>
+        <y>30</y>
+        <width>231</width>
+        <height>22</height>
+       </rect>
+      </property>
+     </widget>
+     <widget class="QSpinBox" name="spinAwayBots">
+      <property name="geometry">
+       <rect>
+        <x>90</x>
+        <y>60</y>
+        <width>47</width>
+        <height>23</height>
+       </rect>
+      </property>
+      <property name="minimum">
+       <number>1</number>
+      </property>
+      <property name="maximum">
+       <number>5</number>
+      </property>
+     </widget>
+    </widget>
+   </widget>
+   <widget class="QWidget" name="">
+    <property name="geometry">
+     <rect>
+      <x>429</x>
+      <y>1</y>
+      <width>283</width>
+      <height>161</height>
+     </rect>
+    </property>
+    <layout class="QVBoxLayout" name="verticalLayout_3">
+     <item>
+      <widget class="QLabel" name="label_2">
+       <property name="font">
+        <font>
+         <pointsize>28</pointsize>
+         <weight>75</weight>
+         <bold>true</bold>
+        </font>
+       </property>
+       <property name="text">
+        <string>Away</string>
+       </property>
+       <property name="alignment">
+        <set>Qt::AlignCenter</set>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QLabel" name="lblaway_score">
+       <property name="enabled">
+        <bool>true</bool>
+       </property>
+       <property name="font">
+        <font>
+         <pointsize>36</pointsize>
+        </font>
+       </property>
+       <property name="text">
+        <string>0</string>
+       </property>
+       <property name="alignment">
+        <set>Qt::AlignCenter</set>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QLabel" name="lblaway_team">
+       <property name="font">
+        <font>
+         <pointsize>20</pointsize>
+        </font>
+       </property>
+       <property name="text">
+        <string>Demo Team</string>
+       </property>
+       <property name="alignment">
+        <set>Qt::AlignCenter</set>
+       </property>
+      </widget>
+     </item>
+    </layout>
+   </widget>
+   <widget class="QWidget" name="">
+    <property name="geometry">
+     <rect>
+      <x>299</x>
+      <y>1</y>
+      <width>121</width>
+      <height>161</height>
+     </rect>
+    </property>
+    <layout class="QVBoxLayout" name="verticalLayout_2">
+     <item>
+      <widget class="QLabel" name="lblhalf">
+       <property name="font">
+        <font>
+         <pointsize>16</pointsize>
+        </font>
+       </property>
+       <property name="text">
+        <string>first half</string>
+       </property>
+       <property name="alignment">
+        <set>Qt::AlignCenter</set>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QLabel" name="lbltimer">
+       <property name="font">
+        <font>
+         <pointsize>36</pointsize>
+        </font>
+       </property>
+       <property name="text">
+        <string>2:00</string>
+       </property>
+       <property name="alignment">
+        <set>Qt::AlignHCenter|Qt::AlignTop</set>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QLabel" name="lblswapsides">
+       <property name="font">
+        <font>
+         <pointsize>10</pointsize>
+        </font>
+       </property>
+       <property name="text">
+        <string/>
+       </property>
+       <property name="alignment">
+        <set>Qt::AlignCenter</set>
+       </property>
+      </widget>
+     </item>
+    </layout>
+   </widget>
+   <widget class="QWidget" name="">
+    <property name="geometry">
+     <rect>
+      <x>10</x>
+      <y>1</y>
+      <width>283</width>
+      <height>161</height>
+     </rect>
+    </property>
+    <layout class="QVBoxLayout" name="verticalLayout">
+     <property name="sizeConstraint">
+      <enum>QLayout::SetMinAndMaxSize</enum>
+     </property>
+     <item>
+      <widget class="QLabel" name="label">
+       <property name="font">
+        <font>
+         <pointsize>28</pointsize>
+         <weight>75</weight>
+         <bold>true</bold>
+        </font>
+       </property>
+       <property name="text">
+        <string>Home</string>
+       </property>
+       <property name="alignment">
+        <set>Qt::AlignCenter</set>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QLabel" name="lblhome_score">
+       <property name="font">
+        <font>
+         <pointsize>36</pointsize>
+        </font>
+       </property>
+       <property name="text">
+        <string>0</string>
+       </property>
+       <property name="alignment">
+        <set>Qt::AlignCenter</set>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QLabel" name="lblhome_team">
+       <property name="font">
+        <font>
+         <pointsize>20</pointsize>
+        </font>
+       </property>
+       <property name="text">
+        <string>Chicken McThuggets</string>
+       </property>
+       <property name="alignment">
+        <set>Qt::AlignCenter</set>
+       </property>
+      </widget>
+     </item>
+    </layout>
+   </widget>
+  </widget>
+  <widget class="QMenuBar" name="menubar">
+   <property name="geometry">
+    <rect>
+     <x>0</x>
+     <y>0</y>
+     <width>722</width>
+     <height>19</height>
+    </rect>
+   </property>
+  </widget>
+  <widget class="QStatusBar" name="statusbar"/>
+ </widget>
+ <resources/>
+ <connections/>
+</ui>
