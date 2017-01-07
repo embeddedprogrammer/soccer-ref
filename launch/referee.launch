@@ -1,0 +1,6 @@
+<?xml version="1.0"?>
+<launch>
+
+    <node name="referee" pkg="soccer_ref" type="referee.py" />
+
+</launch>

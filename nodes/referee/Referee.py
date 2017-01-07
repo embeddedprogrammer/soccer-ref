@@ -42,6 +42,7 @@ class RefereeUI(object):
 
         # Game timer state
         self.game_timer = {
+            'reset_value': 0,
             'milliseconds': 0,
             'is_running': False
         }
@@ -54,7 +55,13 @@ class RefereeUI(object):
         if self.game_timer['milliseconds'] % 1000 == 0:
             self.update_timer_ui()
 
-    def reset_timer(self, secs):
+    def reset_timer(self, secs=0):
+        if secs is not 0:
+            self.game_timer['reset_value'] = secs
+
+        elif secs is 0 and self.game_timer['reset_value'] is not 0:
+            secs = self.game_timer['reset_value']
+
         self.game_timer['milliseconds'] = secs*1000
 
         self.update_timer_ui()
@@ -84,7 +91,7 @@ class RefereeUI(object):
 
 class Referee(object):
     """docstring for Referee"""
-    def __init__(self, ui):
+    def __init__(self, ui, timer_secs, use_timer, sim_mode):
         super(Referee, self).__init__()
 
         # Setup my UI
@@ -101,18 +108,11 @@ class Referee(object):
         # Create a GameState msg that will be continually updated and published
         self.game_state = GameState()
         self.ballIsStillInGoal = False
-        settings = rospy.get_param('game_settings', dict()) # returns as a dict
 
-        # Default settings
-        self.settings = {}
-        if 'match_half_duraction_secs' not in settings:
-            self.settings['timer_duration'] = 120
-        else:
-            self.settings['timer_duration'] = settings['match_half_duration_secs']
 
         # Set up a 100ms timer event loop
         self.timer = RepeatedTimer(0.1, self._timer_handler)
-        self.ui.reset_timer(self.settings['timer_duration'])
+        self.ui.reset_timer(timer_secs)
 
         # Connect Qt Buttons
         self.ui.btn_play.clicked.connect(self._btn_play)
@@ -140,6 +140,7 @@ class Referee(object):
     def _timer_handler(self):
         if self.ui.is_timer_done():
             self.ui.stop_timer()
+            self._btn_play()
 
         if self.ui.is_timer_running():
             self.ui.decrement_timer_by_tenth()

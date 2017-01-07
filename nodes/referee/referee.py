@@ -18,8 +18,13 @@ class MainWindow(QtGui.QMainWindow):
         # Setup ROS node
         rospy.init_node('referee', anonymous=False)
 
+        # Get parameters
+        timer_secs = rospy.get_param('~half_duration_secs', 120)
+        use_timer = rospy.get_param('~use_timer', False)
+        sim_mode = rospy.get_param('~simulation_mode', True)
+
         # Create a ref
-        self.ref = Referee(self)
+        self.ref = Referee(self, timer_secs, use_timer, sim_mode)
 
 
     def close(self):
