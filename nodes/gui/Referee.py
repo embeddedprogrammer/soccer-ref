@@ -37,23 +37,44 @@ class RefereeUI(object):
         # Sim mode label
         self.lbl_sim_mode = ui.lblSimMode
 
+        # Game timer state
+        self.game_timer = {
+            'milliseconds': 0,
+            'is_running': False
+        }
+
     def decrement_timer_by_tenth(self):
-        pass
+        self.game_timer['milliseconds'] -= 100
+
+        if self.game_timer['milliseconds'] % 1000 == 0:
+            self.update_timer_ui()
 
     def reset_timer(self, time):
-        pass
+        self.game_timer['milliseconds'] = time
 
-    def pause_timer(self):
-        pass
+        self.update_timer_ui()
+
+    def stop_timer(self):
+        self.game_timer['is_running'] = False
 
     def start_timer(self):
-        pass
+        self.game_timer['is_running'] = True
+
+    def is_timer_done(self):
+        return self.game_timer['milliseconds'] == 0
 
     def is_timer_running(self):
-        pass
+        return self.game_timer['is_running']
 
     def get_timer_seconds(self):
-        pass
+        ms = self.game_timer['milliseconds']
+        return ms/1000
+
+    def update_timer_ui(self):
+        ms = self.game_timer['milliseconds']
+        secs = (ms / 1000) % 60
+        mins = (ms / 1000) / 60
+        self.lbl_timer.setText("%d:%02d" % (mins, secs))
 
 
 class Referee(object):
@@ -68,15 +89,16 @@ class Referee(object):
         self.home = Team(ui)
         self.away = Team(ui)
 
-        # Set up a 100ms timer event loop
-        self.timer = RepeatedTimer(100, self._timer_handler)
-
         # Connect to ROS things
         rospy.Subscriber('/vision/ball', Pose2D, self._handle_vision_ball)
         self.pub_game_state = rospy.Publisher('/game_state', GameState, queue_size=10, latch=True)
 
         # Create a GameState msg that will be continually updated and published
-        self.game_state_msg = GameState()
+        self.game_state = GameState()
+
+        # Set up a 100ms timer event loop
+        self.timer = RepeatedTimer(0.01, self._timer_handler)
+        self.ui.reset_timer(2*60*1000)
 
         # Connect Qt Buttons
         self.ui.btn_play.clicked.connect(self._btn_play)
@@ -96,18 +118,20 @@ class Referee(object):
 
     def close(self):
         self.timer.stop()
-        return
 
     # =========================================================================
     # Timer Event handler
     # =========================================================================
 
     def _timer_handler(self):
+        if self.ui.is_timer_done():
+            self.ui.stop_timer()
+
         if self.ui.is_timer_running():
-            self.ui.decrement_timer_by_tenth()        
+            self.ui.decrement_timer_by_tenth()
 
         # send a GameState message
-        self.pub_game_state.publish(self.game_state_msg)
+        self.pub_game_state.publish(self.game_state)
 
     # =========================================================================
     # ROS Event Callbacks (subscribers, event loop)
@@ -128,7 +152,24 @@ class Referee(object):
         # toggle between 'Play' and 'Pause'
         # start/stop timer again
         # GameState.play = true/false
-        pass
+        
+
+        if self.game_state.play:
+            # Pause the game and stop the timer
+            self.game_state.play = False
+            self.ui.stop_timer()
+
+            # Update the UI
+            self.ui.btn_play.setText('Play')
+
+
+        else:
+            # Pause the game and stop the timer
+            self.game_state.play = True
+            self.ui.start_timer()
+
+            # Update the UI
+            self.ui.btn_play.setText('Pause')
 
 
     def _btn_reset_field(self):
