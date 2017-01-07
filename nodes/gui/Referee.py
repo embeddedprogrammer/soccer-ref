@@ -43,6 +43,8 @@ class RefereeUI(object):
             'is_running': False
         }
 
+    # ================================= Timer =================================
+
     def decrement_timer_by_tenth(self):
         self.game_timer['milliseconds'] -= 100
 
@@ -86,8 +88,8 @@ class Referee(object):
         self.ui = RefereeUI(ui)
 
         # Create these...
-        self.home = Team(ui)
-        self.away = Team(ui)
+        self.home = Team(ui, team_side='home')
+        self.away = Team(ui, team_side='away')
 
         # Connect to ROS things
         rospy.Subscriber('/vision/ball', Pose2D, self._handle_vision_ball)
@@ -151,10 +153,16 @@ class Referee(object):
 
     def _handle_vision_ball(self, msg):
         if msg.x > goal_threshold:
-            self.state.homescore += 1
+            self.game_state.homescore += 1
+
+            # update the score UI
+            self.home.ui.update_score(self.game_state.homescore)
 
         elif msg.x < -goal_threshold:
-            self.state.awayscore += 1
+            self.game_state.awayscore += 1
+
+            # update the score UI
+            self.away.ui.update_score(self.game_state.awayscore)
 
     # =========================================================================
     # Qt Event Callbacks (buttons, etc)
@@ -212,4 +220,13 @@ class Referee(object):
 
     def _handle_score(self, home=True, inc=True):
         # update the global state
-        pass
+        if home:
+            self.game_state.homescore += 1 if inc else -1
+
+            # update the score UI
+            self.home.ui.update_score(self.game_state.homescore)
+        else:
+            self.game_state.awayscore += 1 if inc else -1
+
+            # update the score UI
+            self.away.ui.update_score(self.game_state.awayscore)

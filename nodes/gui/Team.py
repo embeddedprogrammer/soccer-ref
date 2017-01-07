@@ -19,10 +19,9 @@ class TeamUI(object):
         self.lbl_score = getattr(ui, 'lbl{}_score'.format(team_side))
         self.lbl_team = getattr(ui, 'lbl{}_team'.format(team_side))
 
-        # ---------------------------------------------------------------------
-        # Initialize the GUI
 
-        # self.init_stuff()
+    def update_score(self, score):
+        self.lbl_score.setText(str(score))
 
 class Team(object):
     """docstring for Team"""
