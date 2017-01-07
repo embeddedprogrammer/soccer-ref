@@ -21,6 +21,9 @@
   </property>
   <widget class="QWidget" name="centralwidget">
    <widget class="QPushButton" name="btngoal_inc_away">
+    <property name="enabled">
+     <bool>false</bool>
+    </property>
     <property name="geometry">
      <rect>
       <x>574</x>
@@ -40,6 +43,9 @@
     </property>
    </widget>
    <widget class="QPushButton" name="btngoal_dec_away">
+    <property name="enabled">
+     <bool>false</bool>
+    </property>
     <property name="geometry">
      <rect>
       <x>524</x>
@@ -58,6 +64,9 @@
     </property>
    </widget>
    <widget class="QPushButton" name="btngoal_inc_home">
+    <property name="enabled">
+     <bool>false</bool>
+    </property>
     <property name="geometry">
      <rect>
       <x>154</x>
@@ -78,6 +87,9 @@
     </property>
    </widget>
    <widget class="QPushButton" name="btngoal_dec_home">
+    <property name="enabled">
+     <bool>false</bool>
+    </property>
     <property name="geometry">
      <rect>
       <x>104</x>
@@ -96,6 +108,9 @@
     </property>
    </widget>
    <widget class="QPushButton" name="btnPlay">
+    <property name="enabled">
+     <bool>false</bool>
+    </property>
     <property name="geometry">
      <rect>
       <x>240</x>
@@ -114,6 +129,9 @@
     </property>
    </widget>
    <widget class="QPushButton" name="btnResetField">
+    <property name="enabled">
+     <bool>false</bool>
+    </property>
     <property name="geometry">
      <rect>
       <x>360</x>
@@ -150,6 +168,9 @@
     </property>
    </widget>
    <widget class="QPushButton" name="btnNextHalf">
+    <property name="enabled">
+     <bool>false</bool>
+    </property>
     <property name="geometry">
      <rect>
       <x>240</x>
@@ -956,6 +977,9 @@
     </property>
    </widget>
    <widget class="QPushButton" name="btnResetClock">
+    <property name="enabled">
+     <bool>false</bool>
+    </property>
     <property name="geometry">
      <rect>
       <x>360</x>

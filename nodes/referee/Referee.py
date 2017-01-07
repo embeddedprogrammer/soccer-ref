@@ -42,8 +42,24 @@ class RefereeUI(object):
         self.btn_home_dec_score = ui.btngoal_dec_home
         self.btn_away_inc_score = ui.btngoal_inc_away
         self.btn_away_dec_score = ui.btngoal_dec_away
+
+        # Team combo boxes
         self.cmb_teams_home = ui.cmbTeams_home
         self.cmb_teams_away = ui.cmbTeams_away
+
+        # Team Robot settings
+        self.spin_bots_home = ui.spinBots_home
+        self.spin_bots_away = ui.spinBots_away
+
+        # Team Scoreboard
+        self.lbl_score_home = ui.lblhome_score
+        self.lbl_score_away = ui.lblaway_score
+        self.lbl_team_home = ui.lblhome_team
+        self.lbl_team_away = ui.lblaway_team
+
+        # Team groupboxes
+        self.gpx_home = ui.frameHome
+        self.gpx_away = ui.frameAway
 
         # Sim mode label
         self.lbl_sim_mode = ui.lblSimMode
@@ -105,6 +121,37 @@ class RefereeUI(object):
 
     # =========================================================================
 
+    def update_home_score(self, score):
+        self.lbl_score_home.setText(str(score))
+
+    def update_away_score(self, score):
+        self.lbl_score_away.setText(str(score))
+
+    def enable_team_settings(self, enable=False):
+        self.gpx_home.setEnabled(enable)
+        self.gpx_away.setEnabled(enable)
+
+    def reset_team_scoreboards(self, home_team, away_team):
+        # Team names on the scoreboards
+        self.lbl_team_home.setText(home_team)
+        self.lbl_team_away.setText(away_team)
+
+        # Reset scores
+        self.update_home_score(0)
+        self.update_away_score(0)
+
+    def enable_game_play_buttons(self, enable=False):
+        self.btn_play.setEnabled(enable)
+        self.btn_reset_field.setEnabled(enable)
+        self.btn_next_half.setEnabled(enable)
+        self.btn_reset_clock.setEnabled(enable)
+
+        self.btn_home_inc_score.setEnabled(enable)
+        self.btn_home_dec_score.setEnabled(enable)
+        self.btn_away_inc_score.setEnabled(enable)
+        self.btn_away_dec_score.setEnabled(enable)
+
+
 
 class Referee(object):
     """docstring for Referee"""
@@ -113,10 +160,6 @@ class Referee(object):
 
         # Setup my UI
         self.ui = RefereeUI(ui, sim_mode, use_timer)
-
-        # Create these...
-        self.home = Team(ui, team_side='home')
-        self.away = Team(ui, team_side='away')
 
         # Connect to ROS things
         rospy.Subscriber('/vision/ball', Pose2D, self._handle_vision_ball)
@@ -188,7 +231,7 @@ class Referee(object):
             self.game_state.home_score += 1
 
             # update the score UI
-            self.home.ui.update_score(self.game_state.home_score)
+            self.ui.update_score(self.game_state.home_score)
 
             # flag so that we only count the goal once
             self.ballIsStillInGoal = True
@@ -197,7 +240,7 @@ class Referee(object):
             self.game_state.away_score += 1
 
             # update the score UI
-            self.away.ui.update_score(self.game_state.away_score)
+            self.ui.update_score(self.game_state.away_score)
 
             # flag so that we only count the goal once
             self.ballIsStillInGoal = True
@@ -270,23 +313,37 @@ class Referee(object):
 
     def _btn_start_game(self):
         if self.sim_mode:
-            # toggle between 'Start Game' and 'New Game'
-            # if starting a game, disable groupboxes with team settings
-            # load team names
             if not self.simRunning:
                 home_team = str(self.ui.cmb_teams_home.currentText())
                 away_team = str(self.ui.cmb_teams_away.currentText())
                 cmd = 'roslaunch soccersim sim.launch home_team:=' + home_team + ' away_team:=' + away_team
 
+                # Set game state settings
+                self.game_state.home_bot_count = self.ui.spin_bots_home.value()
+                self.game_state.away_bot_count = self.ui.spin_bots_away.value()
+
                 # Call subprocess using http://stackoverflow.com/questions/4789837/how-to-terminate-a-python-subprocess-launched-with-shell-true
                 self.process = subprocess.Popen(cmd, shell=True, preexec_fn=os.setsid)
                 self.simRunning = True
+
+                # Clear GameState
+                self.game_state = GameState()
+
+                # Update UI
+                self.ui.enable_team_settings(False)
                 self.ui.btn_start_game.setText('Stop Game')
+                self.ui.reset_team_scoreboards(home_team, away_team)
+                self.ui.enable_game_play_buttons(True)
+                
 
             elif self.simRunning:
                 os.killpg(os.getpgid(self.process.pid), signal.SIGTERM)  # Send the signal to all the process groups
                 self.simRunning = False
+                
+                # Update UI
+                self.ui.enable_team_settings(True)
                 self.ui.btn_start_game.setText('Start Game')
+                self.ui.enable_game_play_buttons(False)
                 
 
     def _handle_score(self, home=True, inc=True):
@@ -295,9 +352,9 @@ class Referee(object):
             self.game_state.home_score += 1 if inc else -1
 
             # update the score UI
-            self.home.ui.update_score(self.game_state.home_score)
+            self.ui.update_home_score(self.game_state.home_score)
         else:
             self.game_state.away_score += 1 if inc else -1
 
             # update the score UI
-            self.away.ui.update_score(self.game_state.away_score)
+            self.ui.update_away_score(self.game_state.away_score)
