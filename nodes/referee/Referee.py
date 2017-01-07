@@ -139,11 +139,9 @@ class RefereeUI(object):
         self.cmb_teams_home.addItems(team_list)
         self.cmb_teams_away.addItems(team_list)
 
-    def update_home_score(self, score):
-        self.lbl_score_home.setText(str(score))
-
-    def update_away_score(self, score):
-        self.lbl_score_away.setText(str(score))
+    def update_scores(self, home_score, away_score):
+        self.lbl_score_home.setText(str(home_score))
+        self.lbl_score_away.setText(str(away_score))
 
     def enable_team_settings(self, enable=False):
         self.gpx_home.setEnabled(enable)
@@ -155,8 +153,7 @@ class RefereeUI(object):
         self.lbl_team_away.setText(away_team)
 
         # Reset scores
-        self.update_home_score(0)
-        self.update_away_score(0)
+        self.update_scores(0, 0)
 
     def enable_game_play_buttons(self, enable=False):
         self.btn_play.setEnabled(enable)
@@ -241,25 +238,29 @@ class Referee(object):
     # =========================================================================
 
     def _handle_vision_ball(self, msg):
-        if msg.x > goal_threshold and not self.ballIsStillInGoal:
-            self.game_state.home_score += 1
+        # If the ball is past the goal_threshold on either side, and if
+        # the ball wasn't there before, then it was a goal
+        goal = ((msg.x > goal_threshold) or (msg.x < -goal_threshold)) and not self.ballIsStillInGoal
 
-            # update the score UI
-            self.ui.update_home_score(self.game_state.home_score)
+        # Which goal did it go into?
+        home_side = (msg.x < 0) # home goal is on the left (negative)
+        away_side = (msg.x > 0) # away goal is on the right (positive)
 
-            # flag so that we only count the goal once
+        if goal:
             self.ballIsStillInGoal = True
 
-        elif msg.x < -goal_threshold and not self.ballIsStillInGoal:
-            self.game_state.away_score += 1
+            # Now lets decide who gets the point, based off home/away and which half we are on
+            if home_side ^ self.game_state.second_half:
+                self.game_state.away_score += 1
 
-            # update the score UI
-            self.ui.update_away_score(self.game_state.away_score)
+            elif away_side ^ self.game_state.second_half:
+                self.game_state.home_score += 1
 
-            # flag so that we only count the goal once
-            self.ballIsStillInGoal = True
+            # Update UI
+            self.ui.update_scores(self.game_state.home_score, self.game_state.away_score)
 
-        elif abs(msg.x) < out_of_goal_threshold:
+        # If last we knew, the ball was in the goal but now it's not, update that
+        if self.ballIsStillInGoal and abs(msg.x) < out_of_goal_threshold:
             self.ballIsStillInGoal = False
 
     # =========================================================================
@@ -378,11 +379,8 @@ class Referee(object):
         # update the global state
         if home:
             self.game_state.home_score += 1 if inc else -1
-
-            # update the score UI
-            self.ui.update_home_score(self.game_state.home_score)
         else:
             self.game_state.away_score += 1 if inc else -1
 
-            # update the score UI
-            self.ui.update_away_score(self.game_state.away_score)
+        # update the score UI
+        self.ui.update_scores(self.game_state.home_score, self.game_state.away_score)
