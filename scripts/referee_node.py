@@ -30,3 +30,23 @@ if __name__ == '__main__':
         referee.run()
     except rospy.ROSInterruptException:
         pass
+
+# TODO: PORT TO PYTHON
+
+# #define FIELD_WIDTH         3.40  // in meters
+# #define FIELD_HEIGHT        2.38
+
+# // the ball goes back to home after this threshold
+# #define GOAL_THRESHOLD      (FIELD_WIDTH/2 + 0.05)
+
+# else if (model->GetWorldPose().pos.x < -GOAL_THRESHOLD)
+# {
+#     scoreAway++;
+#     SoccerBall::resetBallAndPublishScore();
+# }
+# else if (model->GetWorldPose().pos.x > GOAL_THRESHOLD)
+# {
+#     scoreHome++;
+#     SoccerBall::resetBallAndPublishScore();
+# }
+
