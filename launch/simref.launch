@@ -1,4 +1,10 @@
 <?xml version="1.0"?>
 <launch>
 
+    <node name="referee" pkg="soccerref" type="referee.py" output="screen">
+        <param name="timer_secs" type="int" value="120" />
+        <param name="use_timer" type="bool" value="true" />
+        <param name="sim_mode" type="bool" value="true" />
+    </node>
+
 </launch>
