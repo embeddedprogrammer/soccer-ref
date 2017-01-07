@@ -6,7 +6,7 @@ from geometry_msgs.msg import Pose2D
 
 from Team import Team
 from repeated_timer import RepeatedTimer
-import os
+import os, subprocess, signal
 
 field_width = 3.40  # in meters
 field_height = 2.38
@@ -118,6 +118,8 @@ class Referee(object):
         # Connect to ROS things
         rospy.Subscriber('/vision/ball', Pose2D, self._handle_vision_ball)
         self.pub_game_state = rospy.Publisher('/game_state', GameState, queue_size=10, latch=True)
+        self.sim_mode = sim_mode
+        self.simRunning = False
 
         # Create a GameState msg that will be continually updated and published
         self.game_state = GameState()
@@ -258,15 +260,26 @@ class Referee(object):
 
 
     def _btn_start_game(self):
-        # toggle between 'Start Game' and 'New Game'
-        # if starting a game, disable groupboxes with team settings
-        # load team names
-        # deal with launch file here?
-        #       well, really you need to call a launch file only in the
-        #       event that we are in simulation mode.
-        #       else, the teams start there own launch files on their
-        #       machines.
-        pass
+        if self.sim_mode:
+            # toggle between 'Start Game' and 'New Game'
+            # if starting a game, disable groupboxes with team settings
+            # load team names
+            if not self.simRunning:
+                home_team = 'demoteam'
+                away_team = 'demoteam'
+                cmd = 'roslaunch soccersim sim.launch home_team:=' + home_team + ' away_team:=' + away_team
+
+                # Call subprocess using http://stackoverflow.com/questions/4789837/how-to-terminate-a-python-subprocess-launched-with-shell-true
+                self.process = subprocess.Popen(cmd, shell=True, preexec_fn=os.setsid)
+
+                self.simRunning = True
+                self.ui.btn_start_game.setText('Stop Game')
+
+            elif self.simRunning:
+                os.killpg(os.getpgid(self.process.pid), signal.SIGTERM)  # Send the signal to all the process groups
+                self.simRunning = False
+                self.ui.btn_start_game.setText('Start Game')
+                
 
 
     def _handle_score(self, home=True, inc=True):
