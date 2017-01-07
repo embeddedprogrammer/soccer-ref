@@ -1,11 +1,12 @@
 from PyQt4 import QtGui, QtCore
 
-import rospy, rostopic
+import rospy, rostopic, roslaunch
 from soccer_ref.msg import GameState
 from geometry_msgs.msg import Pose2D
 
 from Team import Team
 from repeated_timer import RepeatedTimer
+import os
 
 field_width = 3.40  # in meters
 field_height = 2.38
@@ -15,6 +16,9 @@ goal_threshold = (field_width/2 + 0.05)
 
 # we know ball is out of the goal if it passes this line
 out_of_goal_threshold = (field_width/2 - 0.05)
+
+# this folder is used to launch packages
+catkin_ws_folder = os.path.dirname(os.path.abspath(__file__)) + '/../../../'
 
 class RefereeUI(object):
     """docstring for RefereeUI"""
