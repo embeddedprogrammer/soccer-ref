@@ -64,7 +64,6 @@ class Referee(object):
         # Connect to ROS things
         rospy.Subscriber('/vision/ball', Pose2D, self._handle_vision_ball)
         self.pub_game_state = rospy.Publisher('/game_state', GameState, queue_size=10, latch=True)
-        self.pub_ball_command = rospy.Publisher('/ball/command', Vector3, queue_size=10)
 
         # Create a GameState msg that will be continually updated and published
         self.game_state_msg = GameState()
@@ -87,15 +86,6 @@ class Referee(object):
             self._ros_event_loop()
             rate.sleep()
 
-
-
-    def _resetBall(self):
-        msg = Vector3()
-        msg.x = 0
-        msg.y = 0
-        msg.z = 0.2
-        self.pub_ball_command.publish(msg)
-
     # =========================================================================
     # ROS Event Callbacks (subscribers, event loop)
     # =========================================================================
@@ -103,14 +93,9 @@ class Referee(object):
     def _handle_vision_ball(self, msg):
         if msg.x > goal_threshold:
             self.state.homescore += 1
-            self._resetBall()
-            self._publishState()
 
         elif msg.x < -goal_threshold:
             self.state.awayscore += 1
-            self._resetBall()
-            self._publishState()
-
 
     def _ros_event_loop(self, dt):
         if self.ui.is_timer_running():
