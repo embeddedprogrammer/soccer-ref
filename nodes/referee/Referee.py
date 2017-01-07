@@ -231,7 +231,7 @@ class Referee(object):
             self.game_state.home_score += 1
 
             # update the score UI
-            self.ui.update_score(self.game_state.home_score)
+            self.ui.update_home_score(self.game_state.home_score)
 
             # flag so that we only count the goal once
             self.ballIsStillInGoal = True
@@ -240,7 +240,7 @@ class Referee(object):
             self.game_state.away_score += 1
 
             # update the score UI
-            self.ui.update_score(self.game_state.away_score)
+            self.ui.update_away_score(self.game_state.away_score)
 
             # flag so that we only count the goal once
             self.ballIsStillInGoal = True
@@ -326,6 +326,10 @@ class Referee(object):
                 self.process = subprocess.Popen(cmd, shell=True, preexec_fn=os.setsid)
                 self.simRunning = True
 
+                # Go back to first half if necessary
+                if self.game_state.second_half:
+                    self._btn_next_half()
+
                 # Clear GameState
                 self.game_state = GameState()
 
@@ -339,6 +343,9 @@ class Referee(object):
             elif self.simRunning:
                 os.killpg(os.getpgid(self.process.pid), signal.SIGTERM)  # Send the signal to all the process groups
                 self.simRunning = False
+
+                # reset clock, stop play
+                self.ui.stop_timer()                
                 
                 # Update UI
                 self.ui.enable_team_settings(True)
