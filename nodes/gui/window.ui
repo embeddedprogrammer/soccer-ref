@@ -200,7 +200,7 @@
      <property name="title">
       <string>Home Team</string>
      </property>
-     <widget class="QComboBox" name="cmbHomeTeams">
+     <widget class="QComboBox" name="cmbTeams_home">
       <property name="geometry">
        <rect>
         <x>90</x>
@@ -236,7 +236,7 @@
        <string># of bots:</string>
       </property>
      </widget>
-     <widget class="QSpinBox" name="spinHomeBots">
+     <widget class="QSpinBox" name="spinBots_home">
       <property name="geometry">
        <rect>
         <x>90</x>
@@ -307,7 +307,7 @@
        <string>team:</string>
       </property>
      </widget>
-     <widget class="QComboBox" name="cmbAwayTeams">
+     <widget class="QComboBox" name="cmbTeams_away">
       <property name="geometry">
        <rect>
         <x>90</x>
@@ -317,7 +317,7 @@
        </rect>
       </property>
      </widget>
-     <widget class="QSpinBox" name="spinAwayBots">
+     <widget class="QSpinBox" name="spinBots_away">
       <property name="geometry">
        <rect>
         <x>90</x>
