@@ -13,6 +13,9 @@ field_height = 2.38
 # the ball goes back to home after this threshold
 goal_threshold = (field_width/2 + 0.05)
 
+# we know ball is out of the goal if it passes this line
+out_of_goal_threshold = (field_width/2 - 0.05)
+
 class RefereeUI(object):
     """docstring for RefereeUI"""
 
@@ -97,7 +100,7 @@ class Referee(object):
 
         # Create a GameState msg that will be continually updated and published
         self.game_state = GameState()
-
+        self.ballIsStillInGoal = False
         settings = rospy.get_param('game_settings', dict()) # returns as a dict
 
         # Default settings
@@ -152,17 +155,26 @@ class Referee(object):
     # =========================================================================
 
     def _handle_vision_ball(self, msg):
-        if msg.x > goal_threshold:
+        if msg.x > goal_threshold and not self.ballIsStillInGoal:
             self.game_state.homescore += 1
 
             # update the score UI
             self.home.ui.update_score(self.game_state.homescore)
 
-        elif msg.x < -goal_threshold:
+            # flag so that we only count the goal once
+            self.ballIsStillInGoal = True
+
+        elif msg.x < -goal_threshold and not self.ballIsStillInGoal:
             self.game_state.awayscore += 1
 
             # update the score UI
             self.away.ui.update_score(self.game_state.awayscore)
+
+            # flag so that we only count the goal once
+            self.ballIsStillInGoal = True
+
+        elif abs(msg.x) < out_of_goal_threshold:
+            self.ballIsStillInGoal = False
 
     # =========================================================================
     # Qt Event Callbacks (buttons, etc)
