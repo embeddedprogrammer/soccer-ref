@@ -2,7 +2,10 @@ from PyQt4 import QtGui, QtCore
 
 import rospy, rostopic
 from referee.msg import GameState
-from geometry_msgs.msg import Twist, Pose2D, Vector3
+from geometry_msgs.msg import Pose2D
+
+from Team import Team
+from repeated_timer import RepeatedTimer
 
 field_width = 3.40  # in meters
 field_height = 2.38
@@ -25,12 +28,16 @@ class RefereeUI(object):
         self.btn_reset_field = ui.btnResetField
         self.btn_next_half = ui.btnNextHalf
         self.btn_start_game = ui.btnStartGame
-        # Deal with home/away +/- btns here? or in Team?
+        # Score +/- buttons
+        self.btn_home_inc_score = ui.btngoal_inc_home
+        self.btn_home_dec_score = ui.btngoal_dec_home
+        self.btn_away_inc_score = ui.btngoal_inc_away
+        self.btn_away_dec_score = ui.btngoal_dec_away
 
         # Sim mode label
         self.lbl_sim_mode = ui.lblSimMode
 
-    def decrement_timer(self):
+    def decrement_timer_by_tenth(self):
         pass
 
     def reset_timer(self, time):
@@ -61,6 +68,9 @@ class Referee(object):
         self.home = Team(ui)
         self.away = Team(ui)
 
+        # Set up a 100ms timer event loop
+        self.timer = RepeatedTimer(100, self._timer_handler)
+
         # Connect to ROS things
         rospy.Subscriber('/vision/ball', Pose2D, self._handle_vision_ball)
         self.pub_game_state = rospy.Publisher('/game_state', GameState, queue_size=10, latch=True)
@@ -80,11 +90,24 @@ class Referee(object):
         self.ui.btn_away_inc_score.clicked.connect(lambda: self._handle_score(home=False, inc=True))
         self.ui.btn_away_dec_score.clicked.connect(lambda: self._handle_score(home=False, inc=False))
 
-        # Setup the ROS event loop
-        rate = rospy.Rate(10) # 0.1s
-        while not rospy.is_shutdown():
-            self._ros_event_loop()
-            rate.sleep()
+    # =========================================================================
+    # Public methods
+    # =========================================================================
+
+    def close(self):
+        self.timer.stop()
+        return
+
+    # =========================================================================
+    # Timer Event handler
+    # =========================================================================
+
+    def _timer_handler(self):
+        if self.ui.is_timer_running():
+            self.ui.decrement_timer_by_tenth()        
+
+        # send a GameState message
+        self.pub_game_state.publish(self.game_state_msg)
 
     # =========================================================================
     # ROS Event Callbacks (subscribers, event loop)
@@ -96,13 +119,6 @@ class Referee(object):
 
         elif msg.x < -goal_threshold:
             self.state.awayscore += 1
-
-    def _ros_event_loop(self, dt):
-        if self.ui.is_timer_running():
-            # decrement the timer by a tenth
-            # send a GameState message
-            self.pub_game_state(self.game_state_msg)
-
 
     # =========================================================================
     # Qt Event Callbacks (buttons, etc)

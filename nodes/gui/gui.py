@@ -19,7 +19,11 @@ class MainWindow(QtGui.QMainWindow):
         rospy.init_node('referee', anonymous=False)
 
         # Create a ref
-        ref = Referee(self)
+        self.ref = Referee(self)
+
+
+    def close(self):
+        self.ref.close()
 
 
 if __name__ == '__main__':
@@ -34,6 +38,7 @@ if __name__ == '__main__':
 
     # Manually send ROS the shutdown signal so it cleans up nicely
     rospy.signal_shutdown("User closed the GUI")
+    window.close()
     
     sys.exit(0)
 

@@ -33,8 +33,8 @@ class Team(object):
         self.ui = TeamUI(ui, team_side)
 
         # Connect Qt Things
-        self.ui.cmb_teams.clicked.connect(self._cmb_teams)
-        self.ui.spin_bots.clicked.connect(self._spin_bots)
+        # self.ui.cmb_teams.clicked.connect(self._cmb_teams)
+        # self.ui.spin_bots.clicked.connect(self._spin_bots)
 
     # =========================================================================
     # Qt Event Callbacks (buttons, etc)
