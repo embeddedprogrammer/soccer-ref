@@ -254,12 +254,10 @@ class Referee(object):
 
         if self.game_state.second_half:
             self.game_state.second_half = False
-            self.game_state.swapsides = False
             self.ui.lbl_half.setText('first half')
 
         else:
             self.game_state.second_half = True
-            self.game_state.swapsides = True
             self.ui.lbl_half.setText('second half')
 
     def _btn_reset_clock(self):
