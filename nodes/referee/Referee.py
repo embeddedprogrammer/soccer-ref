@@ -212,9 +212,12 @@ class Referee(object):
 
 
         else:
-            # Pause the game and stop the timer
+            # Play the game and start the timer
             self.game_state.play = True
             self.ui.start_timer()
+
+            # We don't need to reset the field anymore
+            self.game_state.reset_field = False
 
             # Update the UI
             self.ui.btn_play.setText('Pause')
@@ -223,8 +226,10 @@ class Referee(object):
     def _btn_reset_field(self):
         # if necessary, press _btn_play to pause game
         # stop timer
-        # GameState.reset = true
-        pass
+        if self.game_state.play:
+            self._btn_play()
+
+        self.game_state.reset_field = True
 
 
     def _btn_next_half(self):
