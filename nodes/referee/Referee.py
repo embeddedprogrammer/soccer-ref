@@ -18,7 +18,7 @@ goal_threshold = (field_width/2 + 0.05)
 out_of_goal_threshold = (field_width/2 - 0.05)
 
 # this folder is used to launch packages
-catkin_ws_folder = os.path.dirname(os.path.abspath(__file__)) + '/../../../'
+catkin_ws_src_folder = os.path.dirname(os.path.abspath(__file__)) + '/../../../'
 
 class RefereeUI(object):
     """docstring for RefereeUI"""
@@ -36,11 +36,14 @@ class RefereeUI(object):
         self.btn_next_half = ui.btnNextHalf
         self.btn_reset_clock = ui.btnResetClock
         self.btn_start_game = ui.btnStartGame
+
         # Score +/- buttons
         self.btn_home_inc_score = ui.btngoal_inc_home
         self.btn_home_dec_score = ui.btngoal_dec_home
         self.btn_away_inc_score = ui.btngoal_inc_away
         self.btn_away_dec_score = ui.btngoal_dec_away
+        self.cmb_teams_home = ui.cmbTeams_home
+        self.cmb_teams_away = ui.cmbTeams_away
 
         # Sim mode label
         self.lbl_sim_mode = ui.lblSimMode
@@ -128,6 +131,14 @@ class Referee(object):
         # Set up a 100ms timer event loop
         self.timer = RepeatedTimer(0.1, self._timer_handler)
         self.ui.reset_timer(timer_secs)
+
+        # Populate team names (under the fragile assumption that all team names are names of directories)
+        def validTeam(obj):
+            return os.path.isdir(os.path.join(catkin_ws_src_folder, obj)) and obj not in ['soccersim', 'soccer_ref']
+
+        team_list = [o for o in os.listdir(catkin_ws_src_folder) if validTeam(o)]
+        self.ui.cmb_teams_home.addItems(team_list)
+        self.ui.cmb_teams_away.addItems(team_list)
 
         # Connect Qt Buttons
         self.ui.btn_play.clicked.connect(self._btn_play)
@@ -265,13 +276,12 @@ class Referee(object):
             # if starting a game, disable groupboxes with team settings
             # load team names
             if not self.simRunning:
-                home_team = 'demoteam'
-                away_team = 'demoteam'
+                home_team = str(self.ui.cmb_teams_home.currentText())
+                away_team = str(self.ui.cmb_teams_away.currentText())
                 cmd = 'roslaunch soccersim sim.launch home_team:=' + home_team + ' away_team:=' + away_team
 
                 # Call subprocess using http://stackoverflow.com/questions/4789837/how-to-terminate-a-python-subprocess-launched-with-shell-true
                 self.process = subprocess.Popen(cmd, shell=True, preexec_fn=os.setsid)
-
                 self.simRunning = True
                 self.ui.btn_start_game.setText('Stop Game')
 
@@ -280,7 +290,6 @@ class Referee(object):
                 self.simRunning = False
                 self.ui.btn_start_game.setText('Start Game')
                 
-
 
     def _handle_score(self, home=True, inc=True):
         # update the global state
