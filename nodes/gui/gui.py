@@ -1,9 +1,10 @@
 #!/usr/bin/env python
 import os, sys
 from PyQt4 import QtGui, uic, QtCore
-from Referee import Referee
 
 import rospy
+
+from Referee import Referee
 
 class MainWindow(QtGui.QMainWindow):
     def __init__(self):
@@ -16,14 +17,10 @@ class MainWindow(QtGui.QMainWindow):
 
         # Setup ROS node
         rospy.init_node('referee', anonymous=False)
-        ref = Referee(self)        
 
-        # Setup all the GUI and ROS elements for each Ally
-        # ally1 = Ally(self, ally=1, active=ally1_active, interval=update_period)
-        # ally2 = Ally(self, ally=2, active=ally2_active, interval=update_period)
+        # Create a ref
+        ref = Referee(self)
 
-        # Setup Game State stuff
-        # game_state = GameState(self)
 
 if __name__ == '__main__':
     # Set up Qt Application Window

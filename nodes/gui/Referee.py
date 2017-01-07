@@ -66,18 +66,6 @@ class Referee(object):
         #self.ui.btn_away_dec_score.clicked.connect(lambda: self._handle_score(home=False, inc=False))
         # Should the referee deal with +/- score buttons?
 
-        # Init state
-        self.state = GameState()
-        self.state.homescore = 0
-        self.state.awayscore = 0
-        self.state.play = False
-        self.state.swapsides = False
-
-        # Publish initial state
-        self._publishState()
-
-    def _publishState(self):
-        self.pub_game_state.publish(self.state)
 
     def _resetBall(self):
         msg = Vector3()
