@@ -3,7 +3,7 @@ import copy
 from PyQt4 import QtGui, QtCore
 
 import rospy, rostopic
-from referee.msg import GameState
+from soccer_ref.msg import GameState
 
 class TeamUI(object):
     """docstring for TeamUI"""

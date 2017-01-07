@@ -1,7 +1,7 @@
 from PyQt4 import QtGui, QtCore
 
 import rospy, rostopic
-from referee.msg import GameState
+from soccer_ref.msg import GameState
 from geometry_msgs.msg import Pose2D
 
 from Team import Team
