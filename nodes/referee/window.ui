@@ -154,7 +154,7 @@
      <rect>
       <x>240</x>
       <y>220</y>
-      <width>231</width>
+      <width>111</width>
       <height>41</height>
      </rect>
     </property>
@@ -947,6 +947,24 @@
     </property>
     <property name="text">
      <string>Simulation Mode</string>
+    </property>
+   </widget>
+   <widget class="QPushButton" name="btnResetClock">
+    <property name="geometry">
+     <rect>
+      <x>360</x>
+      <y>220</y>
+      <width>111</width>
+      <height>41</height>
+     </rect>
+    </property>
+    <property name="font">
+     <font>
+      <pointsize>12</pointsize>
+     </font>
+    </property>
+    <property name="text">
+     <string>Reset Clock</string>
     </property>
    </widget>
   </widget>

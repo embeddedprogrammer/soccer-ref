@@ -20,7 +20,7 @@ class MainWindow(QtGui.QMainWindow):
 
         # Get parameters
         timer_secs = rospy.get_param('~half_duration_secs', 120)
-        use_timer = rospy.get_param('~use_timer', False)
+        use_timer = rospy.get_param('~use_timer', True)
         sim_mode = rospy.get_param('~simulation_mode', True)
 
         # Create a ref

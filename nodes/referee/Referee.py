@@ -23,7 +23,7 @@ catkin_ws_folder = os.path.dirname(os.path.abspath(__file__)) + '/../../../'
 class RefereeUI(object):
     """docstring for RefereeUI"""
 
-    def __init__(self, ui):
+    def __init__(self, ui, sim_mode=True, use_timer=True):
         super(RefereeUI, self).__init__()
 
         # Timer
@@ -34,6 +34,7 @@ class RefereeUI(object):
         self.btn_play = ui.btnPlay
         self.btn_reset_field = ui.btnResetField
         self.btn_next_half = ui.btnNextHalf
+        self.btn_reset_clock = ui.btnResetClock
         self.btn_start_game = ui.btnStartGame
         # Score +/- buttons
         self.btn_home_inc_score = ui.btngoal_inc_home
@@ -43,9 +44,12 @@ class RefereeUI(object):
 
         # Sim mode label
         self.lbl_sim_mode = ui.lblSimMode
+        if not sim_mode:
+            self.lbl_sim_mode.hide()
 
         # Game timer state
         self.game_timer = {
+            'enabled': use_timer,
             'reset_value': 0,
             'milliseconds': 0,
             'is_running': False
@@ -74,10 +78,14 @@ class RefereeUI(object):
         self.game_timer['is_running'] = False
 
     def start_timer(self):
-        self.game_timer['is_running'] = True
+        if self.game_timer['enabled']:
+            self.game_timer['is_running'] = True
 
     def is_timer_done(self):
-        return self.game_timer['milliseconds'] == 0
+        if self.game_timer['enabled']:
+            return self.game_timer['milliseconds'] == 0
+
+        return False
 
     def is_timer_running(self):
         return self.game_timer['is_running']
@@ -92,6 +100,8 @@ class RefereeUI(object):
         mins = (ms / 1000) / 60
         self.lbl_timer.setText("%d:%02d" % (mins, secs))
 
+    # =========================================================================
+
 
 class Referee(object):
     """docstring for Referee"""
@@ -99,7 +109,7 @@ class Referee(object):
         super(Referee, self).__init__()
 
         # Setup my UI
-        self.ui = RefereeUI(ui)
+        self.ui = RefereeUI(ui, sim_mode, use_timer)
 
         # Create these...
         self.home = Team(ui, team_side='home')
@@ -113,7 +123,6 @@ class Referee(object):
         self.game_state = GameState()
         self.ballIsStillInGoal = False
 
-
         # Set up a 100ms timer event loop
         self.timer = RepeatedTimer(0.1, self._timer_handler)
         self.ui.reset_timer(timer_secs)
@@ -122,6 +131,7 @@ class Referee(object):
         self.ui.btn_play.clicked.connect(self._btn_play)
         self.ui.btn_reset_field.clicked.connect(self._btn_reset_field)
         self.ui.btn_next_half.clicked.connect(self._btn_next_half)
+        self.ui.btn_reset_clock.clicked.connect(self._btn_reset_clock)
         self.ui.btn_start_game.clicked.connect(self._btn_start_game)
 
         # Score +/- buttons
@@ -143,8 +153,9 @@ class Referee(object):
 
     def _timer_handler(self):
         if self.ui.is_timer_done():
+            if self.game_state.play:
+                self._btn_play()
             self.ui.stop_timer()
-            self._btn_play()
 
         if self.ui.is_timer_running():
             self.ui.decrement_timer_by_tenth()
@@ -221,6 +232,13 @@ class Referee(object):
         # clear score
         # stop and reset timer
         pass
+
+    def _btn_reset_clock(self):
+        # Pause the game if it's being played
+        if self.game_state.play:
+            self._btn_play()
+
+        self.ui.reset_timer()
 
 
     def _btn_start_game(self):
