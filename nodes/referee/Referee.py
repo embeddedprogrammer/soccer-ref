@@ -17,9 +17,6 @@ goal_threshold = (field_width/2 + 0.05)
 # we know ball is out of the goal if it passes this line
 out_of_goal_threshold = (field_width/2 - 0.05)
 
-# this folder is used to launch packages
-catkin_ws_src_folder = os.path.dirname(os.path.abspath(__file__)) + '/../../../'
-
 class RefereeUI(object):
     """docstring for RefereeUI"""
 
@@ -121,6 +118,27 @@ class RefereeUI(object):
 
     # =========================================================================
 
+    def populate_team_names(self, sim_mode):
+        # a place for team names
+        team_list = []
+
+        if sim_mode:
+            # this folder is used to launch packages
+            catkin_ws_src_folder = os.path.dirname(os.path.abspath(__file__)) + '/../../../'
+
+            def validTeam(obj):
+                return os.path.isdir(os.path.join(catkin_ws_src_folder, obj)) and obj not in ['soccersim', 'soccerref']
+
+            # Populate team names (under the fragile assumption that all team names are names of directories)
+            team_list = [o for o in os.listdir(catkin_ws_src_folder) if validTeam(o)]
+
+        else:
+            # use a yaml file or something
+            pass
+
+        self.cmb_teams_home.addItems(team_list)
+        self.cmb_teams_away.addItems(team_list)
+
     def update_home_score(self, score):
         self.lbl_score_home.setText(str(score))
 
@@ -165,7 +183,7 @@ class Referee(object):
         rospy.Subscriber('/vision/ball', Pose2D, self._handle_vision_ball)
         self.pub_game_state = rospy.Publisher('/game_state', GameState, queue_size=10, latch=True)
         self.sim_mode = sim_mode
-        self.simRunning = False
+        self.game_started = False
 
         # Create a GameState msg that will be continually updated and published
         self.game_state = GameState()
@@ -175,13 +193,9 @@ class Referee(object):
         self.timer = RepeatedTimer(0.1, self._timer_handler)
         self.ui.reset_timer(timer_secs)
 
-        # Populate team names (under the fragile assumption that all team names are names of directories)
-        def validTeam(obj):
-            return os.path.isdir(os.path.join(catkin_ws_src_folder, obj)) and obj not in ['soccersim', 'soccerref']
-
-        team_list = [o for o in os.listdir(catkin_ws_src_folder) if validTeam(o)]
-        self.ui.cmb_teams_home.addItems(team_list)
-        self.ui.cmb_teams_away.addItems(team_list)
+        # Populate team names into comboboxes. If sim_mode, these will come from
+        # the catkin_ws packages. If not, these need to come from .. a YAML?
+        self.ui.populate_team_names(sim_mode)
 
         # Connect Qt Buttons
         self.ui.btn_play.clicked.connect(self._btn_play)
@@ -312,45 +326,52 @@ class Referee(object):
 
 
     def _btn_start_game(self):
-        if self.sim_mode:
-            if not self.simRunning:
-                home_team = str(self.ui.cmb_teams_home.currentText())
-                away_team = str(self.ui.cmb_teams_away.currentText())
-                cmd = 'roslaunch soccersim sim.launch home_team:=' + home_team + ' away_team:=' + away_team
+        if not self.game_started:
+            self.game_started = True
 
-                # Set game state settings
-                self.game_state.home_bot_count = self.ui.spin_bots_home.value()
-                self.game_state.away_bot_count = self.ui.spin_bots_away.value()
+            # Set game state settings
+            self.game_state.home_bot_count = self.ui.spin_bots_home.value()
+            self.game_state.away_bot_count = self.ui.spin_bots_away.value()
 
+            # Get selected team names
+            home_team = str(self.ui.cmb_teams_home.currentText())
+            away_team = str(self.ui.cmb_teams_away.currentText())
+
+            """
+            Only launch team roslaunch files if in sim mode.
+            """
+            if self.sim_mode:
                 # Call subprocess using http://stackoverflow.com/questions/4789837/how-to-terminate-a-python-subprocess-launched-with-shell-true
+                cmd = 'roslaunch soccersim sim.launch home_team:=' + home_team + ' away_team:=' + away_team
                 self.process = subprocess.Popen(cmd, shell=True, preexec_fn=os.setsid)
-                self.simRunning = True
 
-                # Go back to first half if necessary
-                if self.game_state.second_half:
-                    self._btn_next_half()
+            # Go back to first half if necessary
+            if self.game_state.second_half:
+                self._btn_next_half()
 
-                # Clear GameState
-                self.game_state = GameState()
+            # Clear GameState
+            self.game_state = GameState()
 
-                # Update UI
-                self.ui.enable_team_settings(False)
-                self.ui.btn_start_game.setText('Stop Game')
-                self.ui.reset_team_scoreboards(home_team, away_team)
-                self.ui.enable_game_play_buttons(True)
-                
+            # Update UI
+            self.ui.enable_team_settings(False)
+            self.ui.btn_start_game.setText('Stop Game')
+            self.ui.reset_team_scoreboards(home_team, away_team)
+            self.ui.enable_game_play_buttons(True)
+            
 
-            elif self.simRunning:
+        elif self.game_started:
+            self.game_started = False
+
+            if self.sim_mode:
                 os.killpg(os.getpgid(self.process.pid), signal.SIGTERM)  # Send the signal to all the process groups
-                self.simRunning = False
 
-                # reset clock, stop play
-                self.ui.stop_timer()                
-                
-                # Update UI
-                self.ui.enable_team_settings(True)
-                self.ui.btn_start_game.setText('Start Game')
-                self.ui.enable_game_play_buttons(False)
+            # reset clock, stop play
+            self.ui.stop_timer()                
+            
+            # Update UI
+            self.ui.enable_team_settings(True)
+            self.ui.btn_start_game.setText('Start Game')
+            self.ui.enable_game_play_buttons(False)
                 
 
     def _handle_score(self, home=True, inc=True):
