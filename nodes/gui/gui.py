@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 import os, sys
 from PyQt4 import QtGui, uic, QtCore
+from Referee import Referee
 
 import rospy
 
@@ -15,6 +16,7 @@ class MainWindow(QtGui.QMainWindow):
 
         # Setup ROS node
         rospy.init_node('referee', anonymous=False)
+        ref = Referee(self)        
 
         # Setup all the GUI and ROS elements for each Ally
         # ally1 = Ally(self, ally=1, active=ally1_active, interval=update_period)
