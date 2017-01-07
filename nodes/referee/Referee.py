@@ -236,7 +236,18 @@ class Referee(object):
         # press _btn_reset_field
         # clear score
         # stop and reset timer
-        pass
+        self._btn_reset_field()
+        self._btn_reset_clock()
+
+        if self.game_state.second_half:
+            self.game_state.second_half = False
+
+            self.ui.lbl_half.setText('first half')
+
+        else:
+            self.game_state.second_half = True
+
+            self.ui.lbl_half.setText('second half')
 
     def _btn_reset_clock(self):
         # Pause the game if it's being played
