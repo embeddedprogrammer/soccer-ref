@@ -20,6 +20,70 @@ bool reset_field            # Robots should go to their home positions and freez
 bool second_half            # Second half of match. Robots should switch sides.
 ```
 
+### Adding this Package to your Project ###
+
+To access the `GameState` message in your own ROS package, you must add this package to your `catkin_ws` workspace folder. This will also allow you to run the `soccerref` on your own during testing (see below).
+
+Start by cloning this repo into your `catkin_ws/src` directory. It is best to `git clone` the code so that as changes are released you can simply `git pull` to update.
+
+```bash
+$ cd catkin_ws/src
+$ git clone https://github.com/embeddedprogrammer/soccerref.git
+```
+
+Your `catkin_ws/src` directory should look like:
+
+```bash
+catkin_ws/
+  src/
+    soccerref
+    your_team_package/
+      CMakeLists.txt
+      package.xml
+```
+
+Next, you will want to edit your team's `CMakeLists.txt` and `package.xml` so that catkin knows that your package depends on `soccerref`:
+
+```cmake
+# CMakeLists.txt
+
+find_package(catkin REQUIRED COMPONENTS
+  roscpp
+  ...
+  soccerref
+)
+
+...
+
+catkin_package(
+ CATKIN_DEPENDS roscpp ... soccerref
+)
+```
+
+```xml
+<!-- package.xml -->
+
+<buildtool_depend>catkin</buildtool_depend>
+...
+<build_depend>soccerref</build_depend>
+...
+<run_depend>soccerref</run_depend>
+```
+
+Now that your package knows it needs `soccerref`, you can run `catkin_make` to generate the ROS message for `GameState.msg`:
+
+```bash
+$ catkin_make   # make sure you are in 'catkin_ws' and not 'catkin_ws/src'
+```
+
+### Starting the `soccerref` ###
+
+Use `roslaunch`:
+
+```bash
+$ roslaunch soccerref simref.py
+```
+
 ### Screenshots ###
 
 The main `soccerref` GUI:
