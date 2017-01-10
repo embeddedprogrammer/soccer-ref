@@ -214,6 +214,11 @@ class Referee(object):
     def close(self):
         self.timer.stop()
 
+        # Don't leave any loose threads!
+        if self.game_started and self.sim_mode:
+            # Send a kill signal to all the process groups
+            os.killpg(os.getpgid(self.process.pid), signal.SIGTERM)
+
     # =========================================================================
     # Timer Event handler
     # =========================================================================
