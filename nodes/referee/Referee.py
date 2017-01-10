@@ -1,6 +1,6 @@
 from PyQt4 import QtGui, QtCore
 
-import rospy, rostopic, roslaunch
+import rospy, rostopic
 from soccerref.msg import GameState
 from geometry_msgs.msg import Pose2D
 
@@ -8,14 +8,14 @@ from Team import Team
 from repeated_timer import RepeatedTimer
 import os, subprocess, signal
 
-field_width = 3.40  # in meters
-field_height = 2.38
+field_width = 3.53  # in meters
+field_height = 2.39
 
 # the ball goes back to home after this threshold
-goal_threshold = (field_width/2 + 0.05)
+goal_threshold = field_width/2 + .04
 
 # we know ball is out of the goal if it passes this line
-out_of_goal_threshold = (field_width/2 - 0.05)
+out_of_goal_threshold = field_width/2 - 0.1
 
 class RefereeUI(object):
     """docstring for RefereeUI"""
@@ -343,6 +343,9 @@ class Referee(object):
             # Go back to first half if necessary
             if self.game_state.second_half:
                 self._btn_next_half()
+
+            # Reset clock
+            self._btn_reset_clock()
 
             # Clear GameState
             self.game_state = GameState()
