@@ -12,10 +12,10 @@ field_width = 3.53  # in meters
 field_height = 2.39
 
 # the ball goes back to home after this threshold
-goal_threshold = field_width/2 + .04
+goal_threshold = field_width/2 + .05
 
 # we know ball is out of the goal if it passes this line
-out_of_goal_threshold = field_width/2 - 0.1
+out_of_goal_threshold = 0.3
 
 class RefereeUI(object):
     """docstring for RefereeUI"""
