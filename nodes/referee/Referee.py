@@ -4,7 +4,6 @@ import rospy, rostopic
 from soccerref.msg import GameState
 from geometry_msgs.msg import Pose2D
 
-from Team import Team
 from repeated_timer import RepeatedTimer
 import os, subprocess, signal
 
