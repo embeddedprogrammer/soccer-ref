@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <launch>
 
-    <node name="referee" pkg="soccerref" type="referee.py" output="screen">
+    <node name="referee" pkg="soccerref" type="referee_node.py" output="screen">
         <param name="half_duration_secs" type="int" value="120" />
         <param name="use_timer" type="bool" value="true" />
         <param name="simulation_mode" type="bool" value="false" />
