@@ -5,6 +5,14 @@ This ROS package contains a PyQt GUI (see screenshot below) whose job is to publ
 
 Inspired by the [Chicken McThuggets Command Center](https://www.youtube.com/watch?v=bMZNFNGh_Pk&feature=youtu.be).
 
+**Dependencies:**
+
+The Referee uses PyQt4 to render the GUI. Because of this, you must install this dependency. On Linux:
+
+```bash
+$ sudo apt-get install python-qt4
+```
+
 ### `GameState` Message ###
 
 The message definition contains the following:
