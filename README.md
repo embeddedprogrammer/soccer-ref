@@ -102,7 +102,7 @@ This error typically happens when there is already another instance of Gazebo (`
 
 ```bash
 $ ps aux | grep gz   # Find any process that has 'gz' in it (like 'gzserver' and 'gzclient')
-$ sudo kill <pid>    # the second column has the 5-digit process id (pid)
+$ sudo kill <pid>    # the second column has the 5ish-digit process id (pid)
 ```
 
 Now you can try pressing `Start Game` again.
