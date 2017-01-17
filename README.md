@@ -92,6 +92,22 @@ Use `roslaunch`:
 $ roslaunch soccerref simref.py
 ```
 
+### Good to Know ###
+
+Occasionally, when you press `Start Game` on the `soccerref` GUI, you might see an error message like this:
+
+![gzerr](https://github.com/embeddedprogrammer/soccerref/wiki/assets/gzerr.png)
+
+This error typically happens when there is already another instance of Gazebo (`gzserver`) still running in the background. To solve this, you can run the following commands:
+
+```bash
+$ ps aux | grep gz   # Find any process that has 'gz' in it (like 'gzserver' and 'gzclient')
+$ sudo kill <pid>    # the second column has the 5-digit process id (pid)
+```
+
+Now you can try pressing `Start Game` again.
+
+
 ### Screenshots ###
 
 The main `soccerref` GUI:
