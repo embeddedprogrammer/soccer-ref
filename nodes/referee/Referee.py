@@ -10,8 +10,8 @@ import os, subprocess, signal
 field_width = 3.53  # in meters
 field_height = 2.39
 
-# the ball goes back to home after this threshold
-goal_threshold = field_width/2 + .05
+# In simulation the ball goes back to home just before this threshold
+goal_threshold = field_width/2 + .03
 
 # we know ball is out of the goal if it passes this line
 out_of_goal_threshold = 0.3
@@ -176,7 +176,10 @@ class Referee(object):
         self.ui = RefereeUI(ui, sim_mode, use_timer)
 
         # Connect to ROS things
-        rospy.Subscriber('/vision/ball', Pose2D, self._handle_vision_ball)
+        if sim_mode:
+            rospy.Subscriber('/ball/truth', Pose2D, self._handle_vision_ball) #Of course this is fair - the referee is the referee!
+        else:
+            rospy.Subscriber('/vision/ball', Pose2D, self._handle_vision_ball)
         self.pub_game_state = rospy.Publisher('/game_state', GameState, queue_size=10, latch=True)
         self.sim_mode = sim_mode
         self.game_started = False
