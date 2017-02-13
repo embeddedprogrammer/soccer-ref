@@ -1,0 +1,13 @@
+<launch>
+  <machine name="home" address="192.168.1.186" user="ecestudent" env-loader="~/env.sh"/>
+  <node machine="foo" name="usb_cam_test" pkg="usb_cam" type="usb_cam_node" output="screen">
+    <param name="video_device" value="/dev/video0"/>
+    <param name="image_width" value="864"/>
+    <param name="image_height" value="480"/>
+    <param name="pixel_format" value="yuyv"/>
+    <param name="camera_frame_id" value="usb_cam"/>
+    <param name="io_method" value="mmap"/>
+    <param name="camera_name" value="home"/>
+    <remap from="/usb_cam/image_raw" to="/test/image_raw"/>
+  </node>
+</launch>
