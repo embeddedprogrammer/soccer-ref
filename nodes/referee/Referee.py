@@ -180,7 +180,7 @@ class Referee(object):
             rospy.Subscriber('/ball/truth', Pose2D, self._handle_vision_ball) #Of course this is fair - the referee is the referee!
         else:
             rospy.Subscriber('/vision/ball', Pose2D, self._handle_vision_ball)
-        self.pub_game_state = rospy.Publisher('/game_state', GameState, queue_size=10, latch=True)
+        self.pub_game_state = rospy.Publisher('game_state', GameState, queue_size=10, latch=True)
         self.sim_mode = sim_mode
         self.game_started = False
 
