@@ -5,11 +5,13 @@
     <arg name="half_duration_secs" default="120" />
     <arg name="use_timer" default="true" />
     <arg name="simulation_mode" default="false" />
+    <arg name="competition_mode" default="false" />
 
     <node name="referee" pkg="soccerref" type="referee_node.py" output="screen">
         <param name="half_duration_secs" type="int" value="$(arg half_duration_secs)" />
         <param name="use_timer" type="bool" value="$(arg use_timer)" />
         <param name="simulation_mode" type="bool" value="$(arg simulation_mode)" />
+        <param name="competition_mode" type="bool" value="$(arg competition_mode)" />
     </node>
 
 </launch>

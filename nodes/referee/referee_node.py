@@ -22,9 +22,10 @@ class MainWindow(QtGui.QMainWindow):
         timer_secs = rospy.get_param('~half_duration_secs', 120)
         use_timer = rospy.get_param('~use_timer', True)
         sim_mode = rospy.get_param('~simulation_mode', True)
+        competition_mode = rospy.get_param('~competition_mode', True)
 
         # Create a ref
-        self.ref = Referee(self, timer_secs, use_timer, sim_mode)
+        self.ref = Referee(self, timer_secs, use_timer, sim_mode, competition_mode)
 
 
     def close(self):

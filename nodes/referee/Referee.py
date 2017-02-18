@@ -19,7 +19,7 @@ out_of_goal_threshold = 0.3
 class RefereeUI(object):
     """docstring for RefereeUI"""
 
-    def __init__(self, ui, sim_mode=True, use_timer=True):
+    def __init__(self, ui, sim_mode=True, use_timer=True, competition_mode=False):
         super(RefereeUI, self).__init__()
 
         # Timer
@@ -59,8 +59,12 @@ class RefereeUI(object):
 
         # Sim mode label
         self.lbl_sim_mode = ui.lblSimMode
-        if not sim_mode:
-            self.lbl_sim_mode.hide()
+        if sim_mode:
+            self.lbl_sim_mode.setText('Simulation Mode')
+        elif competition_mode:
+            self.lbl_sim_mode.setText('Competition Mode')
+        else:
+            self.lbl_sim_mode.setText('HW Testing Mode')
 
         # Game timer state
         self.game_timer = {
@@ -169,17 +173,16 @@ class RefereeUI(object):
 
 class Referee(object):
     """docstring for Referee"""
-    def __init__(self, ui, timer_secs, use_timer, sim_mode):
+    def __init__(self, ui, timer_secs, use_timer, sim_mode, competition_mode):
         super(Referee, self).__init__()
 
         # Setup my UI
-        self.ui = RefereeUI(ui, sim_mode, use_timer)
+        self.ui = RefereeUI(ui, sim_mode, use_timer, competition_mode)
 
         # Connect to ROS things
-        if sim_mode:
-            rospy.Subscriber('/ball/truth', Pose2D, self._handle_vision_ball) #Of course this is fair - the referee is the referee!
-        else:
-            rospy.Subscriber('/vision/ball', Pose2D, self._handle_vision_ball)
+        ball_topic = '/ball/truth' if sim_mode else '/vision/ball' # TODO: Create a ref-vision node?
+        rospy.Subscriber(ball_topic, Pose2D, self._handle_vision_ball)
+        
         self.pub_game_state = rospy.Publisher('game_state', GameState, queue_size=10, latch=True)
         self.sim_mode = sim_mode
         self.game_started = False
