@@ -116,7 +116,9 @@ Now you can try pressing `Start Game` again.
 
 The main `soccerref` GUI:
 
-![soccerref gui](https://github.com/embeddedprogrammer/soccerref/wiki/assets/soccerref.png)
+<p align="center">
+  <img src="https://github.com/embeddedprogrammer/soccerref/wiki/assets/soccerref.png" alt="soccerref gui" />
+</p>
 
 --------------------------
 
