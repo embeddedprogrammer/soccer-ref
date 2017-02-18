@@ -13,6 +13,10 @@ The Referee uses PyQt4 to render the GUI. Because of this, you must install this
 $ sudo apt-get install python-qt4
 ```
 
+### How to use this package ###
+
+See the [wiki](https://github.com/embeddedprogrammer/soccerref/wiki/How-to-use-the-soccerref-package) for an understanding of how and in which settings to use the different functional schemes of the Robot Soccer Referee.
+
 ### `GameState` Message ###
 
 The message definition contains the following:
