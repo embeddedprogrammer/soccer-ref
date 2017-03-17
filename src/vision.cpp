@@ -27,8 +27,8 @@ using namespace cv;
 #define CAMERA_WIDTH            640.0
 #define CAMERA_HEIGHT           480.0
 
-// These colours need to match the Gazebo materials
-Scalar yellow[] = {Scalar(20,  128, 128), Scalar(30,  255, 255)};
+//int yellow[] = {20, 128, 128,   30, 255, 255};
+int yellow[] = {32, 57, 236,   30, 255, 255};
 
 // Handlers for vision position publishers
 ros::Publisher ball_pub;
@@ -39,7 +39,7 @@ geometry_msgs::Pose2D poseBall;
 
 void thresholdImage(Mat& imgHSV, Mat& imgGray, Scalar color[])
 {
-	inRange(imgHSV, color[0], color[1], imgGray);
+	inRange(imgHSV, Scalar(yellow[0], yellow[1], yellow[2]), Scalar(yellow[3], yellow[4], yellow[5]), imgGray);
 
 	erode(imgGray, imgGray, getStructuringElement(MORPH_ELLIPSE, Size(2, 2)));
 	dilate(imgGray, imgGray, getStructuringElement(MORPH_ELLIPSE, Size(2, 2)));
@@ -106,25 +106,34 @@ void getBallPose(Mat& imgHsv, Scalar color[], geometry_msgs::Pose2D& ballPose)
 void processImage(Mat img, Mat hsv)
 {
 	// Threshold, etc
-	getBallPose(hsv,  yellow, poseBall);
+	//getBallPose(hsv,  yellow, poseBall);
 
 	// Publish results
 	ball_pub.publish(poseBall);
 }
 
-void channelDist(Mat& hsv, Mat& dist, int hueVal, int channel)
+void channelDist(Mat& hsv, Mat& dist, int val, int channel)
 {
-	Mat hue;
-	extractChannel(hsv, hue, channel);
+	Mat channelImg;
+	extractChannel(hsv, channelImg, channel);
 	if (channel == 0)
 	{
 		Mat dist1, dist2;
-		absdiff(hue, hueVal, dist1);
-		absdiff(hue, hueVal + ((hueVal < 90) ? 180 : -180), dist2);
+		absdiff(channelImg, val, dist1);
+		absdiff(channelImg, val + ((val < 90) ? 180 : -180), dist2);
 		min(dist1, dist2, dist);
 	}
 	else
-		absdiff(hue, hueVal, dist);
+		absdiff(channelImg, val, dist);
+}
+
+void totalDist(Mat& hsv, Mat& dist, int hue, int sat, int val, int satScale, int valScale)
+{
+	Mat hueDist, satDist, valDist;
+	channelDist(hsv, hueDist, hue, 0);
+	channelDist(hsv, satDist, sat, 1);
+	channelDist(hsv, valDist, val, 2);
+	dist = hueDist + satDist*(satScale / 255.0) + valDist*(valScale / 255.0);
 }
 
 void hueMax(Mat& hsv, Mat& img)
@@ -217,13 +226,38 @@ void showHistogram(Mat& img)
 char lastKeyPressed;
 int hueVal = 0;
 Mat hsv, img, bgr;
+Point mouseLoc;
+
+void createTrackbar()
+{
+	cvDestroyWindow("Control");
+	namedWindow("Control", WINDOW_NORMAL);
+
+	createTrackbar("LowH", "Control", &yellow[0], 179);
+	createTrackbar("HighH", "Control", &yellow[3], 179);
+
+	createTrackbar("LowS", "Control", &yellow[1], 255);
+	createTrackbar("HighS", "Control", &yellow[4], 255);
+
+	createTrackbar("LowV", "Control", &yellow[2], 255);
+	createTrackbar("HighV", "Control", &yellow[5], 255);
+
+	//moveWindow("Control", 0, 0);
+	//resizeWindow("Control", 290, 290);
+}
+
+#define CHANNEL_HUE 0x1
+#define CHANNEL_SAT 0x2
+#define CHANNEL_VAL 0x4
+uint channelMask = 0x0;
+int blurSize = 3;
 
 void imageCallback(const sensor_msgs::ImageConstPtr& msg)
 {
 	bgr = cv_bridge::toCvShare(msg, "bgr8")->image;
 	img = bgr;
 	cvtColor(img, hsv, COLOR_BGR2HSV);
-	processImage(img, hsv);
+	//processImage(img, hsv);
 
 	if(lastKeyPressed == 'h')
 		extractChannel(hsv, img, 0);
@@ -240,14 +274,46 @@ void imageCallback(const sensor_msgs::ImageConstPtr& msg)
 	if(lastKeyPressed == 'l')
 		detectLines(img);
 	if(lastKeyPressed == 't')
-		showHistogram(hsv);
-
+	{
+		//showHistogram(hsv);
+		int b = 6;
+		Rect roi = Rect(mouseLoc.x - b, mouseLoc.y - b, b*2+1, b*2+1);
+		Mat cropped = Mat(hsv, roi);
+		rectangle(img, roi, Scalar(255, 0, 0), 1, CV_AA);
+		showHistogram(cropped);
+	}
+	if(lastKeyPressed == 'g')
+	{
+		//grabCut(img, mask, rect, bgdModel, fgdModel, 1);
+	}
+	if(lastKeyPressed == 'b')
+	{
+		inRange(hsv, Scalar(yellow[0], yellow[1], yellow[2]), Scalar(yellow[3], yellow[4], yellow[5]), img);
+	}
+	if(lastKeyPressed == 'c')
+	{
+		totalDist(hsv, img, yellow[0], yellow[1], yellow[2], yellow[4], yellow[5]);
+		img = 255 - img * (255.0 / yellow[3]);
+	}
+	if(lastKeyPressed == 'e')
+	{
+		totalDist(hsv, img, yellow[0], yellow[1], yellow[2], yellow[4], yellow[5]);
+		threshold(img, img, yellow[3], 255, THRESH_BINARY_INV);
+	}
+	if(lastKeyPressed == 'f')
+	{
+		totalDist(hsv, img, yellow[0], yellow[1], yellow[2], yellow[4], yellow[5]);
+		GaussianBlur(img, img, Size(blurSize, blurSize), 0);
+		threshold(img, img, yellow[3], 255, THRESH_BINARY_INV);
+	}
 	imshow(GUI_NAME, img);
 
 	// Wait for key press
 	char key = waitKey(30);
 	if(key != -1)
 		lastKeyPressed = key;
+	if(key >= '1' && key <= '9')
+		blurSize = (key - '0');
 	if(key == 'q')
 		ros::shutdown();
 }
@@ -261,7 +327,10 @@ void mouseCallback(int event, int x, int y, int flags, void* userdata)
 	displayStatusBar(GUI_NAME, buffer, 10000);
 
 	if (event == EVENT_LBUTTONDOWN)
+	{
 		hueVal = hsvVal[0];
+		mouseLoc = Point(x, y);
+	}
 	// Point2d point_meters = imageToWorldCoordinates(Point2d(x, y));
 	//sprintf(buffer, "Location: (%.3f m, %.3f m)", point_meters.x, point_meters.y);
 }
@@ -274,6 +343,7 @@ int main(int argc, char **argv)
 	// Create OpenCV Window and add a mouse callback for clicking
 	namedWindow(GUI_NAME, CV_WINDOW_AUTOSIZE);
 	setMouseCallback(GUI_NAME, mouseCallback, NULL);
+	createTrackbar();
 
 	// Subscribe to camera
 	image_transport::ImageTransport it(nh);
