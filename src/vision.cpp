@@ -5,6 +5,7 @@
 #include <opencv2/highgui/highgui.hpp>
 #include <opencv2/imgproc/imgproc.hpp>
 #include <cv_bridge/cv_bridge.h>
+#include <algorithm>
 
 #include <cmath>
 #include <iostream>
@@ -252,6 +253,8 @@ void createTrackbar()
 uint channelMask = 0x0;
 int blurSize = 3;
 
+void drawPoints(Mat img);
+
 void imageCallback(const sensor_msgs::ImageConstPtr& msg)
 {
 	bgr = cv_bridge::toCvShare(msg, "bgr8")->image;
@@ -306,6 +309,10 @@ void imageCallback(const sensor_msgs::ImageConstPtr& msg)
 		GaussianBlur(img, img, Size(blurSize, blurSize), 0);
 		threshold(img, img, yellow[3], 255, THRESH_BINARY_INV);
 	}
+	if(lastKeyPressed == 'z')
+	{
+		drawPoints(img);
+	}
 	imshow(GUI_NAME, img);
 
 	// Wait for key press
@@ -318,21 +325,77 @@ void imageCallback(const sensor_msgs::ImageConstPtr& msg)
 		ros::shutdown();
 }
 
+// void mouseCallback(int event, int x, int y, int flags, void* userdata)
+// {
+// 	Vec3b bgrVal = bgr.at<Vec3b>(y, x);
+// 	Vec3b hsvVal = hsv.at<Vec3b>(y, x);
+// 	char buffer[100];
+// 	sprintf(buffer, "B:%d G:%d R:%d - H:%d S:%d V:%d", bgrVal[0], bgrVal[1], bgrVal[2], hsvVal[0], hsvVal[1], hsvVal[2]);
+// 	displayStatusBar(GUI_NAME, buffer, 10000);
+
+// 	if (event == EVENT_LBUTTONDOWN)
+// 	{
+// 		hueVal = hsvVal[0];
+// 		mouseLoc = Point(x, y);
+// 	}
+// 	// Point2d point_meters = imageToWorldCoordinates(Point2d(x, y));
+// 	//sprintf(buffer, "Location: (%.3f m, %.3f m)", point_meters.x, point_meters.y);
+// }
+
+vector<Point> points;
+
+void initPoints()
+{
+	points = vector<Point>(4);
+	// points[0] = Point(originalImage.rows * 1 / 2, originalImage.rows * 1 / 2);
+	// points[1] = Point(originalImage.rows * 1 / 3, originalImage.rows * 1 / 3);
+	// points[2] = Point(originalImage.rows * 1 / 3, originalImage.rows * 2 / 3);
+	// points[3] = Point(originalImage.rows * 2 / 3, originalImage.rows * 2 / 3);
+	// points[4] = Point(originalImage.rows * 2 / 3, originalImage.rows * 1 / 3);
+	points[0] = Point(0, 0);
+	points[1] = Point(100, 0);
+	points[2] = Point(100, 100);
+	points[3] = Point(100, 100);
+}
+
+bool compareDoubles(double d1, double d2)
+{
+	return d1 < d2;
+}
+
+void moveClosestPoint(Point clickPoint)
+{
+	vector<double> distances = vector<double>(points.size());
+	for(int i = 0; i < points.size(); i++)
+		distances[i] = norm(points[i] - clickPoint);
+	int idx = min_element(distances.begin(), distances.end()) - distances.begin();
+	points[idx] = clickPoint;
+}
+
+void drawPoints(Mat img)
+{
+	const Point* ppt[1] = { &points[0] };
+	int npt[] = { points.size() };	
+	fillPoly(img, ppt, npt, 1, Scalar(255, 255, 255), CV_AA);
+}
+
+int mouseDown;
+
 void mouseCallback(int event, int x, int y, int flags, void* userdata)
 {
-	Vec3b bgrVal = bgr.at<Vec3b>(y, x);
-	Vec3b hsvVal = hsv.at<Vec3b>(y, x);
-	char buffer[100];
-	sprintf(buffer, "B:%d G:%d R:%d - H:%d S:%d V:%d", bgrVal[0], bgrVal[1], bgrVal[2], hsvVal[0], hsvVal[1], hsvVal[2]);
-	displayStatusBar(GUI_NAME, buffer, 10000);
-
-	if (event == EVENT_LBUTTONDOWN)
+	if(event == EVENT_LBUTTONDOWN)
+		mouseDown = 1;
+	else if(event == EVENT_RBUTTONDOWN)
+		mouseDown = 2;
+	else if(event == EVENT_LBUTTONUP)
+		mouseDown = 0;
+	else if(event == EVENT_RBUTTONUP)
+		mouseDown = 0;
+	if (mouseDown)
 	{
-		hueVal = hsvVal[0];
-		mouseLoc = Point(x, y);
+		moveClosestPoint(Point(x, y));
+		//drawPoints();
 	}
-	// Point2d point_meters = imageToWorldCoordinates(Point2d(x, y));
-	//sprintf(buffer, "Location: (%.3f m, %.3f m)", point_meters.x, point_meters.y);
 }
 
 int main(int argc, char **argv)
@@ -342,6 +405,7 @@ int main(int argc, char **argv)
 
 	// Create OpenCV Window and add a mouse callback for clicking
 	namedWindow(GUI_NAME, CV_WINDOW_AUTOSIZE);
+	initPoints();
 	setMouseCallback(GUI_NAME, mouseCallback, NULL);
 	createTrackbar();
 
