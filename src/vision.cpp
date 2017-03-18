@@ -397,8 +397,29 @@ void moveClosestPoint(Point clickPoint)
 void drawPoints(Mat img)
 {
 	const Point* ppt[1] = { &points[0] };
-	int npt[] = { points.size() };	
-	fillPoly(img, ppt, npt, 1, Scalar(255, 255, 255), CV_AA);
+	int npt[] = { points.size() };
+	Mat mask = Mat(img.size(), CV_8UC1, Scalar(0));
+	fillPoly(mask, ppt, npt, 1, Scalar(255), CV_AA);
+	//Mat drawing = img.clone();
+	Mat drawing = Mat(img.size(), CV_8UC3, Scalar(0));
+	img.copyTo(drawing, mask);
+	addWeighted(img, .5, drawing, .5, 0, img);
+	vector<Point2f> pts_image = vector<Point2f>(points.size());
+	for(int i = 0; i < points.size(); i++)
+		pts_image[i] = Point2f(points[i]);
+		
+	vector<Point2f> pts_world = vector<Point2f>(points.size());
+	pts_world[0] = Point2f(-FIELD_WIDTH/2, -FIELD_HEIGHT/2);
+	pts_world[1] = Point2f(FIELD_WIDTH/2, -FIELD_HEIGHT/2);
+	pts_world[2] = Point2f(FIELD_WIDTH/2, FIELD_HEIGHT/2);
+	pts_world[3] = Point2f(-FIELD_WIDTH/2, FIELD_HEIGHT/2);
+	
+	//Mat H = findHomography()
+	Mat H = getPerspectiveTransform(pts_image, pts_world);
+	vector<Point2f> test;
+	perspectiveTransform(pts_image, test, H);
+	for(int i = 0; i < points.size(); i++)
+		printf("%d - %f, %f\n", i, test[i].x, test[i].y);
 }
 
 int mouseDown;
