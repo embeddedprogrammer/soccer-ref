@@ -254,11 +254,15 @@ uint channelMask = 0x0;
 int blurSize = 3;
 
 void drawPoints(Mat img);
+void initPoints(Size imgSize);
+bool pointsInitialized = false;
 
 void imageCallback(const sensor_msgs::ImageConstPtr& msg)
 {
 	bgr = cv_bridge::toCvShare(msg, "bgr8")->image;
 	img = bgr;
+	if(!pointsInitialized)
+		initPoints(img.size());
 	cvtColor(img, hsv, COLOR_BGR2HSV);
 	//processImage(img, hsv);
 
@@ -344,18 +348,36 @@ void imageCallback(const sensor_msgs::ImageConstPtr& msg)
 
 vector<Point> points;
 
-void initPoints()
+void initPoints(Size imgSize)
 {
+	ros::NodeHandle nh;
 	points = vector<Point>(4);
-	// points[0] = Point(originalImage.rows * 1 / 2, originalImage.rows * 1 / 2);
-	// points[1] = Point(originalImage.rows * 1 / 3, originalImage.rows * 1 / 3);
-	// points[2] = Point(originalImage.rows * 1 / 3, originalImage.rows * 2 / 3);
-	// points[3] = Point(originalImage.rows * 2 / 3, originalImage.rows * 2 / 3);
-	// points[4] = Point(originalImage.rows * 2 / 3, originalImage.rows * 1 / 3);
-	points[0] = Point(0, 0);
-	points[1] = Point(100, 0);
-	points[2] = Point(100, 100);
-	points[3] = Point(100, 100);
+	points[0] = Point(imgSize.width * 0.1, imgSize.height * 0.1);
+	points[1] = Point(imgSize.width * 0.9, imgSize.height * 0.1);
+	points[2] = Point(imgSize.width * 0.9, imgSize.height * 0.9);
+	points[3] = Point(imgSize.width * 0.1, imgSize.height * 0.9);
+	for(int i = 0; i < points.size(); i++)
+	{
+		char buffer[50];
+		sprintf(buffer, "/soccerref_vision/field_bounds/corner%d", i);
+		string prefix = string(buffer);
+		nh.param<int>(prefix + "/x", points[i].x, points[i].x);
+		nh.param<int>(prefix + "/y", points[i].y, points[i].y);
+	}
+	pointsInitialized = true;
+}
+
+void savePoints()
+{
+	ros::NodeHandle nh;
+	for(int i = 0; i < points.size(); i++)
+	{
+		char buffer[50];
+		sprintf(buffer, "/soccerref_vision/field_bounds/corner%d", i);
+		string prefix = string(buffer);
+		nh.setParam(prefix + "/x", points[i].x);
+		nh.setParam(prefix + "/y", points[i].y);
+	}	
 }
 
 bool compareDoubles(double d1, double d2)
@@ -405,7 +427,6 @@ int main(int argc, char **argv)
 
 	// Create OpenCV Window and add a mouse callback for clicking
 	namedWindow(GUI_NAME, CV_WINDOW_AUTOSIZE);
-	initPoints();
 	setMouseCallback(GUI_NAME, mouseCallback, NULL);
 	createTrackbar();
 
@@ -416,5 +437,6 @@ int main(int argc, char **argv)
 	// Create Ball Publisher
 	ball_pub = nh.advertise<geometry_msgs::Pose2D>("/vision/ball", 5);
 	ros::spin();
+	savePoints();
 	return 0;
 }
