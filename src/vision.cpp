@@ -20,27 +20,20 @@ using namespace cv;
 #define ROBOT_RADIUS    0.10
 #define GUI_NAME        "Soccer Overhead Camera"
 
-// Mouse click parameters, empirically found
-// The smaller the number, the more positive the error
-// (i.e., it will be above the mouse in +y region)
-#define FIELD_WIDTH_PIXELS      577.0 // measured from threshold of goal to goal
-#define FIELD_HEIGHT_PIXELS     388.0 // measured from inside of wall to wall
-#define CAMERA_WIDTH            640.0
-#define CAMERA_HEIGHT           480.0
-
 //int yellow[] = {20, 128, 128,   30, 255, 255};
-int yellow[] = {32, 57, 236,   30, 255, 255};
+int ballColor[3];
+int distThreshold;
 
 // Handlers for vision position publishers
 ros::Publisher ball_pub;
 
-// Use variables to store position of objects. These variables are very
-// useful when the ball cannot be seen, otherwise we'll get the position (0, 0)
+// Use variables to store position of objects. These variables are useful
+// when the ball cannot be seen, otherwise we'll get the position (0, 0)
 geometry_msgs::Pose2D poseBall;
 
 void thresholdImage(Mat& imgHSV, Mat& imgGray, Scalar color[])
 {
-	inRange(imgHSV, Scalar(yellow[0], yellow[1], yellow[2]), Scalar(yellow[3], yellow[4], yellow[5]), imgGray);
+	//inRange(imgHSV, Scalar(yellow[0], yellow[1], yellow[2]), Scalar(yellow[3], yellow[4], yellow[5]), imgGray);
 
 	erode(imgGray, imgGray, getStructuringElement(MORPH_ELLIPSE, Size(2, 2)));
 	dilate(imgGray, imgGray, getStructuringElement(MORPH_ELLIPSE, Size(2, 2)));
@@ -63,21 +56,21 @@ bool compareMomentAreas(Moments moment1, Moments moment2)
 	return area1 < area2;
 }
 
-Point2d imageToWorldCoordinates(Point2d point_i)
-{
-	Point2d centerOfField(CAMERA_WIDTH/2, CAMERA_HEIGHT/2);
-	Point2d center_w = (point_i - centerOfField);
+// Point2d imageToWorldCoordinates(Point2d point_i)
+// {
+// 	//Point2d centerOfField(CAMERA_WIDTH/2, CAMERA_HEIGHT/2);
+// 	//Point2d center_w = (point_i - centerOfField);
 
-	// You have to split up the pixel to meter conversion
-	// because it is a rect, not a square!
-	center_w.x *= (FIELD_WIDTH/FIELD_WIDTH_PIXELS);
-	center_w.y *= (FIELD_HEIGHT/FIELD_HEIGHT_PIXELS);
+// 	// You have to split up the pixel to meter conversion
+// 	// because it is a rect, not a square!
+// 	//center_w.x *= (FIELD_WIDTH/FIELD_WIDTH_PIXELS);
+// 	//center_w.y *= (FIELD_HEIGHT/FIELD_HEIGHT_PIXELS);
 
-	// Reflect y
-	center_w.y = -center_w.y;
+// 	// Reflect y
+// 	//center_w.y = -center_w.y;
 	
-	return center_w;
-}
+// 	return center_w;
+// }
 
 void getBallPose(Mat& imgHsv, Scalar color[], geometry_msgs::Pose2D& ballPose)
 {
@@ -98,7 +91,7 @@ void getBallPose(Mat& imgHsv, Scalar color[], geometry_msgs::Pose2D& ballPose)
 	std::sort(mm.begin(), mm.end(), compareMomentAreas);
 
 	// Use largest to calculate ball center
-	Point2d ballCenter = imageToWorldCoordinates(getCenterOfMass(mm[0]));
+	Point2d ballCenter; // = imageToWorldCoordinates(getCenterOfMass(mm[0]));
 	ballPose.x = ballCenter.x;
 	ballPose.y = ballCenter.y;
 	ballPose.theta = 0;
@@ -128,104 +121,16 @@ void channelDist(Mat& hsv, Mat& dist, int val, int channel)
 		absdiff(channelImg, val, dist);
 }
 
-void totalDist(Mat& hsv, Mat& dist, int hue, int sat, int val, int satScale, int valScale)
+void totalDist(Mat& hsv, Mat& dist, int hue, int sat, int val)
 {
 	Mat hueDist, satDist, valDist;
 	channelDist(hsv, hueDist, hue, 0);
 	channelDist(hsv, satDist, sat, 1);
 	channelDist(hsv, valDist, val, 2);
-	dist = hueDist + satDist*(satScale / 255.0) + valDist*(valScale / 255.0);
-}
-
-void hueMax(Mat& hsv, Mat& img)
-{
-	vector<Mat> channels;
-	split(hsv, channels);
-	channels[1].setTo(255);
-	channels[2].setTo(255);
-	Mat hsv2;
-	merge(channels, hsv2);
-	cvtColor(hsv2, img, CV_HSV2BGR);
-}
-
-void detectLines(Mat& img)
-{
-	// Init
-	static Ptr<LineSegmentDetector> ls = createLineSegmentDetector(LSD_REFINE_STD); //can use LSD_REFINE_STD or LSD_REFINE_NONE
-
-	// Convert to grayscale
-    Mat gray;
-    cvtColor(img, gray, COLOR_BGR2GRAY);
-
-    // Detect the lines
-    vector<Vec4f> lines_std;
-    ls->detect(gray, lines_std);
-
-    // Show found lines
-    ls->drawSegments(img, lines_std);
-}
-
-void showHistogram(Mat& img)
-{
-	int bins = 256;             // number of bins
-	int nc = img.channels();    // number of channels
-
-	vector<Mat> hist(nc);       // histogram arrays
-
-	// Initalize histogram arrays
-	for (int i = 0; i < hist.size(); i++)
-		hist[i] = Mat::zeros(1, bins, CV_32SC1);
-
-	// Calculate the histogram of the image
-	for (int i = 0; i < img.rows; i++)
-	{
-		for (int j = 0; j < img.cols; j++)
-		{
-			for (int k = 0; k < nc; k++)
-			{
-				uchar val = nc == 1 ? img.at<uchar>(i,j) : img.at<Vec3b>(i,j)[k];
-				hist[k].at<int>(val) += 1;
-			}
-		}
-	}
-
-	// For each histogram arrays, obtain the maximum (peak) value
-	// Needed to normalize the display later
-	int hmax[3] = {0,0,0};
-	for (int i = 0; i < nc; i++)
-	{
-		for (int j = 0; j < bins-1; j++)
-			hmax[i] = hist[i].at<int>(j) > hmax[i] ? hist[i].at<int>(j) : hmax[i];
-	}
-
-	//const char* wname[3] = { "blue", "green", "red" };
-	//Scalar colors[3] = { Scalar(255,0,0), Scalar(0,255,0), Scalar(0,0,255) };
-	const char* wname[3] = { "hue", "sat", "val" };
-	Scalar colors[3] = { Scalar(255,255,255), Scalar(255,255,255), Scalar(255,255,255) };
-
-	vector<Mat> canvas(nc);
-
-	// Display each histogram in a canvas
-	for (int i = 0; i < nc; i++)
-	{
-		canvas[i] = Mat::ones(125, bins, CV_8UC3);
-
-		for (int j = 0, rows = canvas[i].rows; j < bins-1; j++)
-		{
-			line(
-				canvas[i], 
-				Point(j, rows), 
-				Point(j, rows - (hist[i].at<int>(j) * rows/hmax[i])), 
-				nc == 1 ? Scalar(200,200,200) : colors[i], 
-				1, 8, 0
-			);
-		}
-		imshow(nc == 1 ? "value" : wname[i], canvas[i]);
-	}
+	dist = hueDist + satDist + valDist;
 }
 
 char lastKeyPressed;
-int hueVal = 0;
 Mat hsv, img, bgr;
 Point mouseLoc;
 
@@ -234,28 +139,22 @@ void createTrackbar()
 	cvDestroyWindow("Control");
 	namedWindow("Control", WINDOW_NORMAL);
 
-	createTrackbar("LowH", "Control", &yellow[0], 179);
-	createTrackbar("HighH", "Control", &yellow[3], 179);
+	createTrackbar("Hue", "Control", &ballColor[0], 179);
+	createTrackbar("Sat", "Control", &ballColor[1], 179);
 
-	createTrackbar("LowS", "Control", &yellow[1], 255);
-	createTrackbar("HighS", "Control", &yellow[4], 255);
+	createTrackbar("Val", "Control", &ballColor[2], 255);
+	createTrackbar("Dist", "Control", &distThreshold, 255);
 
-	createTrackbar("LowV", "Control", &yellow[2], 255);
-	createTrackbar("HighV", "Control", &yellow[5], 255);
-
-	//moveWindow("Control", 0, 0);
-	//resizeWindow("Control", 290, 290);
+	moveWindow("Control", 0, 0);
+	resizeWindow("Control", 290, 290);
 }
 
-#define CHANNEL_HUE 0x1
-#define CHANNEL_SAT 0x2
-#define CHANNEL_VAL 0x4
-uint channelMask = 0x0;
 int blurSize = 3;
 
 void drawPoints(Mat img);
 void initPoints(Size imgSize);
 bool pointsInitialized = false;
+bool thresholdsInitialized = false;
 
 void imageCallback(const sensor_msgs::ImageConstPtr& msg)
 {
@@ -268,50 +167,29 @@ void imageCallback(const sensor_msgs::ImageConstPtr& msg)
 
 	if(lastKeyPressed == 'h')
 		extractChannel(hsv, img, 0);
-	if(lastKeyPressed == 'i')
-		hueMax(hsv, img);
 	if(lastKeyPressed == 's')
 		extractChannel(hsv, img, 1);
 	if(lastKeyPressed == 'v')
 		extractChannel(hsv, img, 2);
 	if(lastKeyPressed == 'd')
-		channelDist(hsv, img, hueVal, 0);
+		channelDist(hsv, img, ballColor[0], 0);
 	if(lastKeyPressed == 'a')
 		img = hsv;
-	if(lastKeyPressed == 'l')
-		detectLines(img);
-	if(lastKeyPressed == 't')
-	{
-		//showHistogram(hsv);
-		int b = 6;
-		Rect roi = Rect(mouseLoc.x - b, mouseLoc.y - b, b*2+1, b*2+1);
-		Mat cropped = Mat(hsv, roi);
-		rectangle(img, roi, Scalar(255, 0, 0), 1, CV_AA);
-		showHistogram(cropped);
-	}
-	if(lastKeyPressed == 'g')
-	{
-		//grabCut(img, mask, rect, bgdModel, fgdModel, 1);
-	}
-	if(lastKeyPressed == 'b')
-	{
-		inRange(hsv, Scalar(yellow[0], yellow[1], yellow[2]), Scalar(yellow[3], yellow[4], yellow[5]), img);
-	}
 	if(lastKeyPressed == 'c')
 	{
-		totalDist(hsv, img, yellow[0], yellow[1], yellow[2], yellow[4], yellow[5]);
-		img = 255 - img * (255.0 / yellow[3]);
+		totalDist(hsv, img, ballColor[0], ballColor[1], ballColor[2]);
+		img = 255 - img * (255.0 / distThreshold);
 	}
 	if(lastKeyPressed == 'e')
 	{
-		totalDist(hsv, img, yellow[0], yellow[1], yellow[2], yellow[4], yellow[5]);
-		threshold(img, img, yellow[3], 255, THRESH_BINARY_INV);
+		totalDist(hsv, img, ballColor[0], ballColor[1], ballColor[2]);
+		threshold(img, img, distThreshold, 255, THRESH_BINARY_INV);
 	}
 	if(lastKeyPressed == 'f')
 	{
-		totalDist(hsv, img, yellow[0], yellow[1], yellow[2], yellow[4], yellow[5]);
+		totalDist(hsv, img, ballColor[0], ballColor[1], ballColor[2]);
 		GaussianBlur(img, img, Size(blurSize, blurSize), 0);
-		threshold(img, img, yellow[3], 255, THRESH_BINARY_INV);
+		threshold(img, img, distThreshold, 255, THRESH_BINARY_INV);
 	}
 	if(lastKeyPressed == 'z')
 	{
@@ -348,14 +226,36 @@ void imageCallback(const sensor_msgs::ImageConstPtr& msg)
 
 vector<Point> points;
 
-void initPoints(Size imgSize)
+void initThresholds()
 {
 	ros::NodeHandle nh;
+	nh.param<int>("/soccerref_vision/ball_color/hue", ballColor[0], 32);
+	nh.param<int>("/soccerref_vision/ball_color/sat", ballColor[1], 57);
+	nh.param<int>("/soccerref_vision/ball_color/val", ballColor[2], 236);
+	nh.param<int>("/soccerref_vision/ball_color/dist", distThreshold, 30);
+	thresholdsInitialized = true;
+}
+
+void saveThresholds()
+{
+	ros::NodeHandle nh;
+	nh.setParam("/soccerref_vision/ball_color/hue", ballColor[0]);
+	nh.setParam("/soccerref_vision/ball_color/sat", ballColor[1]);
+	nh.setParam("/soccerref_vision/ball_color/val", ballColor[2]);
+	nh.setParam("/soccerref_vision/ball_color/dist", distThreshold);
+}
+
+void initPoints(Size imgSize)
+{
+	// load defaults
 	points = vector<Point>(4);
 	points[0] = Point(imgSize.width * 0.1, imgSize.height * 0.1);
 	points[1] = Point(imgSize.width * 0.9, imgSize.height * 0.1);
 	points[2] = Point(imgSize.width * 0.9, imgSize.height * 0.9);
 	points[3] = Point(imgSize.width * 0.1, imgSize.height * 0.9);
+
+	// overwrite with param server values (if they are available)
+	ros::NodeHandle nh;
 	for(int i = 0; i < points.size(); i++)
 	{
 		char buffer[50];
@@ -407,7 +307,7 @@ void drawPoints(Mat img)
 	vector<Point2f> pts_image = vector<Point2f>(points.size());
 	for(int i = 0; i < points.size(); i++)
 		pts_image[i] = Point2f(points[i]);
-		
+
 	vector<Point2f> pts_world = vector<Point2f>(points.size());
 	pts_world[0] = Point2f(-FIELD_WIDTH/2, -FIELD_HEIGHT/2);
 	pts_world[1] = Point2f(FIELD_WIDTH/2, -FIELD_HEIGHT/2);
