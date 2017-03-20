@@ -5,4 +5,6 @@ int32 away_bot_count
 int32 remaining_seconds
 bool play
 bool reset_field
+bool home_penalty
+bool away_penalty
 bool second_half
