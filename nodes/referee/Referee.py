@@ -1,5 +1,7 @@
 from PyQt4 import QtGui, QtCore
 
+import math
+
 import rospy, rostopic
 from soccerref.msg import GameState
 from geometry_msgs.msg import Pose2D
@@ -111,7 +113,7 @@ class RefereeUI(object):
 
     def get_timer_seconds(self):
         ms = self.game_timer['milliseconds']
-        return ms/1000
+        return int(math.ceil(ms/1000.0))
 
     def update_timer_ui(self):
         ms = self.game_timer['milliseconds']
