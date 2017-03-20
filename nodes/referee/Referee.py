@@ -303,6 +303,10 @@ class Referee(object):
             # We don't need to reset the field anymore
             self.game_state.reset_field = False
 
+            # we can also clear any penalties
+            self.game_state.home_penalty = False
+            self.game_state.away_penalty = False
+
             # Update the UI
             self.ui.btn_play.setText('Pause')
 
@@ -404,4 +408,9 @@ class Referee(object):
 
 
     def _handle_penalty(self, home=True):
-        pass
+        # reset the field
+        self._btn_reset_field()
+
+        # let the team know they need to reset in penalty mode
+        self.game_state.home_penalty = home
+        self.game_state.away_penalty = not home
