@@ -32,61 +32,25 @@ ros::Publisher ball_pub;
 // Use variables to store position of objects. These variables are useful
 // when the ball cannot be seen, otherwise we'll get the position (0, 0)
 geometry_msgs::Pose2D ballPose;
-
-vector<double> cpuTimes;
-vector<double> actualTimes;
+Point2f ballCenter_image;
 
 char lastKeyPressed;
 
-Mat img, hsv, dist, distBlurred, bw, homography;
+Mat img, hsv, dist, distBlurred, bw, homography, mask;
 
 Point mouseLoc;
 
-int blurSize = 5;
-void drawPoints(Mat img);
-void initPoints(Size imgSize);
-void initThresholds();
 bool pointsInitialized = false;
 bool trackbarShown = false;
 
-double get_wall_time()
-{
-	struct timeval time;
-	gettimeofday(&time, NULL);
-	return (double)time.tv_sec + (double)time.tv_usec * .000001;
-}
+int blurSize = 5;
 
-// Source: stackoverflow.com/questions/17432502/how-can-i-measure-cpu-time-and-wall-clock-time-on-both-linux-windows
-double get_cpu_time()
-{
-	return (double)clock() / CLOCKS_PER_SEC;
-}
-
-void tic()
-{
-	cpuTimes.push_back(get_cpu_time());
-	actualTimes.push_back(get_wall_time());
-}
-
-void toc(string s = "", int count = 1, int sigFigs = 2, bool print = true)
-//timeMeasurement toc(string s, int count, int sigFigs, bool print)
-{
-	if (cpuTimes.size() > 0)
-	{
-		double cpuTime_ms = (get_cpu_time() - cpuTimes.back()) * 1e3 / count;
-		double actualTime_ms = (get_wall_time() - actualTimes.back()) / CLOCKS_PER_SEC * 1000 / count;
-		cpuTimes.pop_back();
-		actualTimes.pop_back();
-		int precision1 = max(sigFigs - 1 - int(floor(log10(actualTime_ms))), 0);
-		int precision2 = max(sigFigs - 1 - int(floor(log10(cpuTime_ms))), 0);
-		if (print)
-		{
-			printf("%s: %.*f/%.*f ms\n", s.c_str(), precision1, cpuTime_ms, precision2, actualTime_ms);
-		}
-	}
-	else
-		printf("Error: Must call tic before toc.\n");
-}
+// Function prototypes
+void initThresholds();
+void initPoints(Size imgSize);
+void drawBorders(Mat result);
+void drawMask();
+void calcHomography();
 
 void channelDist(Mat& hsv, Mat& dist, int val, int channel)
 {
@@ -131,10 +95,17 @@ bool compareMomentAreas(Moments moment1, Moments moment2)
 
 void processImage()
 {
-	tic();
-	
+	// Init mask and homography if not yet initialized
+	if(!pointsInitialized)
+	{
+		initPoints(img.size());
+		calcHomography();
+		drawMask();
+	}
+
 	// Threshold
 	totalDist(hsv, dist, ballColor[0], ballColor[1], ballColor[2]);
+	bitwise_or(dist, mask, dist);
 	GaussianBlur(dist, distBlurred, Size(blurSize, blurSize), 0);
 	threshold(distBlurred, bw, distThreshold, 255, THRESH_BINARY_INV);
 
@@ -143,34 +114,30 @@ void processImage()
 	vector<Vec4i> hierarchy;
 	Mat used = bw.clone();
 	findContours(used, contours, hierarchy, CV_RETR_CCOMP, CV_CHAIN_APPROX_SIMPLE);
-	if (hierarchy.size() < 1)
-		return;
+	if (hierarchy.size() >= 1)
+	{
+		// Sort contours by size
+		vector<Moments> mm;
+		for(int i = 0; i < hierarchy.size(); i++)
+			mm.push_back(moments((Mat)contours[i]));
+		std::sort(mm.begin(), mm.end(), compareMomentAreas);
 
-	// Sort contours by size
-	vector<Moments> mm;
-	for(int i = 0; i < hierarchy.size(); i++)
-		mm.push_back(moments((Mat)contours[i]));
-	std::sort(mm.begin(), mm.end(), compareMomentAreas);
+		// Use largest contour to calculate ball center
+		ballCenter_image = getCenterOfMass(mm[0]);
+		
+		// Transform the points to world coordinates
+		vector<Point2f> pts_image = {ballCenter_image}, pts_world;
+		perspectiveTransform(pts_image, pts_world, homography);
+		Point2f ballCenter_world = pts_world[0];
 
-	// Use largest contour to calculate ball center
-	Point2f ballCenter_image = getCenterOfMass(mm[0]);
-	
-	// Init homography if not yet initialized
-	if(!pointsInitialized)
-		initPoints(img.size());
-
-	// Tranform the points to world coordinates
-	vector<Point2f> pts_image = {ballCenter_image}, pts_world;
-	perspectiveTransform(pts_image, pts_world, homography);
-	Point2f ballCenter_world = pts_world[0];
+		// Store ball position (useful for when ball cannot be seen for a period of time)
+		ballPose.x = ballCenter_world.x;
+		ballPose.y = ballCenter_world.y;
+		ballPose.theta = 0;
+	}
 
 	// Publish results
-	ballPose.x = ballCenter_world.x;
-	ballPose.y = ballCenter_world.y;
-	ballPose.theta = 0;
 	ball_pub.publish(ballPose);
-
-	toc("Time to process image");	
 }
 
 void createTrackbar()
@@ -179,11 +146,9 @@ void createTrackbar()
 		return;
 	cvDestroyWindow("Control");
 	namedWindow("Control", WINDOW_NORMAL);
-	printf("Ball values are %d, %d, %d, %d\n", ballColor[0], ballColor[1], ballColor[2], distThreshold);
 
 	createTrackbar("Hue", "Control", &ballColor[0], 179);
 	createTrackbar("Sat", "Control", &ballColor[1], 179);
-
 	createTrackbar("Val", "Control", &ballColor[2], 255);
 	createTrackbar("Dist", "Control", &distThreshold, 255);
 
@@ -201,8 +166,9 @@ void destroyTrackbar()
 void printMenu()
 {
 	printf("a - Show grayscale\n");
-	printf("b - Show threshold without blur\n");
-	printf("c - Show threshold with blur\n");
+	printf("b - Show grayscale after gaussian blur\n");
+	printf("c - Show threshold\n");
+	printf("d - Show borders and ball location\n");
 	printf("z - Modify borders of field\n");
 	printf("q - Quit\n");
 }
@@ -216,19 +182,29 @@ void imageCallback(const sensor_msgs::ImageConstPtr& msg)
 
 	if(lastKeyPressed == 'a')
 	{
+		createTrackbar();
 		result = 255 - dist * (255.0 / distThreshold);
 	}
 	else if(lastKeyPressed == 'b')
 	{
+		createTrackbar();
 		result = 255 - distBlurred * (255.0 / distThreshold);
 	}
 	else if(lastKeyPressed == 'c')
 	{
+		createTrackbar();
 		result = bw;
+	}
+	else if(lastKeyPressed == 'd')
+	{
+		destroyTrackbar();
+		circle(result, ballCenter_image, 10, Scalar(0, 0, 255), 1, CV_AA);
+		drawBorders(result);
 	}
 	else if(lastKeyPressed == 'z')
 	{
-		drawPoints(result);
+		destroyTrackbar();
+		drawBorders(result);
 	}
 	else
 	{
@@ -254,7 +230,6 @@ void initThresholds()
 	nh.param<int>("/soccerref_vision/ball_color/sat", ballColor[1], 57);
 	nh.param<int>("/soccerref_vision/ball_color/val", ballColor[2], 236);
 	nh.param<int>("/soccerref_vision/ball_color/dist", distThreshold, 30);
-	printf("Initialized thresholds\n");
 }
 
 void saveThresholds()
@@ -275,17 +250,13 @@ void calcHomography()
 
 	// World points
 	vector<Point2f> pts_world = vector<Point2f>(points.size());
-	pts_world[0] = Point2f(-FIELD_WIDTH/2, -FIELD_HEIGHT/2);
-	pts_world[1] = Point2f(FIELD_WIDTH/2, -FIELD_HEIGHT/2);
-	pts_world[2] = Point2f(FIELD_WIDTH/2, FIELD_HEIGHT/2);
-	pts_world[3] = Point2f(-FIELD_WIDTH/2, FIELD_HEIGHT/2);
+	pts_world[0] = Point2f(-FIELD_WIDTH/2, FIELD_HEIGHT/2);
+	pts_world[1] = Point2f(FIELD_WIDTH/2, FIELD_HEIGHT/2);
+	pts_world[2] = Point2f(FIELD_WIDTH/2, -FIELD_HEIGHT/2);
+	pts_world[3] = Point2f(-FIELD_WIDTH/2, -FIELD_HEIGHT/2);
 	
 	// Calculate homography
 	homography = getPerspectiveTransform(pts_image, pts_world);
-	vector<Point2f> test;
-	perspectiveTransform(pts_image, test, homography);
-	for(int i = 0; i < points.size(); i++)
-		printf("%d - %f, %f\n", i, test[i].x, test[i].y);
 }
 
 void initPoints(Size imgSize)
@@ -308,7 +279,6 @@ void initPoints(Size imgSize)
 		nh.param<int>(prefix + "/y", points[i].y, points[i].y);
 	}
 	pointsInitialized = true;
-	calcHomography();
 }
 
 void savePoints()
@@ -338,16 +308,19 @@ void moveClosestPoint(Point clickPoint)
 	points[idx] = clickPoint;
 }
 
-void drawPoints(Mat img)
+void drawMask()
 {
 	const Point* ppt[1] = { &points[0] };
 	int npt[] = { (int)points.size() };
-	Mat mask = Mat(img.size(), CV_8UC1, Scalar(0));
-	fillPoly(mask, ppt, npt, 1, Scalar(255), CV_AA);
-	//Mat drawing = img.clone();
-	Mat drawing = Mat(img.size(), CV_8UC3, Scalar(0));
-	img.copyTo(drawing, mask);
-	addWeighted(img, .5, drawing, .5, 0, img);
+	mask = Mat(img.size(), CV_8UC1, Scalar(255));
+	fillPoly(mask, ppt, npt, 1, Scalar(0), CV_AA);
+}
+
+void drawBorders(Mat result)
+{
+	const Point* ppt[1] = { &points[0] };
+	int npt[] = { (int)points.size() };
+	polylines(result, ppt, npt, 1, true, Scalar(0, 0, 255), 1, CV_AA);
 }
 
 int mouseDown;
@@ -366,9 +339,7 @@ void mouseCallback(int event, int x, int y, int flags, void* userdata)
 	{
 		moveClosestPoint(Point(x, y));
 		calcHomography();
-		Mat result = img.clone();
-		drawPoints(result);
-		imshow(GUI_NAME, result);
+		drawMask();
 	}
 	else
 	{
@@ -383,12 +354,14 @@ void mouseCallback(int event, int x, int y, int flags, void* userdata)
 
 int main(int argc, char **argv)
 {
+	// Init ros
 	ros::init(argc, argv, "vision_sim");
 	ros::NodeHandle nh;
 
 	// Create OpenCV Window and add a mouse callback for clicking
 	namedWindow(GUI_NAME, CV_WINDOW_AUTOSIZE);
 	setMouseCallback(GUI_NAME, mouseCallback, NULL);
+	printMenu();
 	initThresholds();
 	createTrackbar();
 
