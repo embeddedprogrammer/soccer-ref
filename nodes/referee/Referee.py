@@ -212,7 +212,7 @@ class Referee(object):
         self.ui.btn_start_game.clicked.connect(self._btn_start_game)
 
         # Penalty buttons
-        self.ui.btn_home_penalty.clicked.connect(lambda: self._handle_penalty(home=False))
+        self.ui.btn_home_penalty.clicked.connect(lambda: self._handle_penalty(home=True))
         self.ui.btn_away_penalty.clicked.connect(lambda: self._handle_penalty(home=False))
 
         # Score +/- buttons
