@@ -17,8 +17,15 @@
 using namespace std;
 using namespace cv;
 
+// TODO: At some point we should modify the dimensions to match the actual dimensions of the field
+// These changes need to be done in this file, referee.py, the blender model, the soccerBall plugin, and the simulator vision.
+// The actual dimenions of the field (not including the goals) are 3.18 x 2.22 meters
+// The goals are 0.61 x 0.10 meters.
+
 #define FIELD_WIDTH     3.53  // in meters
 #define FIELD_HEIGHT    2.39 
+#define GOAL_WIDTH      0.61
+#define GOAL_DEPTH      0.14
 #define ROBOT_RADIUS    0.10
 #define GUI_NAME        "Soccer Overhead Camera"
 
@@ -44,6 +51,8 @@ bool pointsInitialized = false;
 bool trackbarShown = false;
 
 int blurSize = 5;
+
+vector<Point> points, pts_goal1, pts_goal2;
 
 // Function prototypes
 void initThresholds();
@@ -193,7 +202,7 @@ void imageCallback(const sensor_msgs::ImageConstPtr& msg)
 	else if(lastKeyPressed == 'c')
 	{
 		createTrackbar();
-		result = bw;
+		result = bw + mask;
 	}
 	else if(lastKeyPressed == 'd')
 	{
@@ -220,8 +229,6 @@ void imageCallback(const sensor_msgs::ImageConstPtr& msg)
 	if(key == 'q')
 		ros::shutdown();
 }
-
-vector<Point> points;
 
 void initThresholds()
 {
@@ -257,6 +264,32 @@ void calcHomography()
 	
 	// Calculate homography
 	homography = getPerspectiveTransform(pts_image, pts_world);
+
+	// Calculate goal dimensions
+	vector<Point2f> pts_goal1_world = vector<Point2f>(4);
+	pts_goal1_world[0] = Point2f(-FIELD_WIDTH/2 - GOAL_DEPTH, GOAL_WIDTH/2);
+	pts_goal1_world[1] = Point2f(-FIELD_WIDTH/2,              GOAL_WIDTH/2);
+	pts_goal1_world[2] = Point2f(-FIELD_WIDTH/2,              -GOAL_WIDTH/2);
+	pts_goal1_world[3] = Point2f(-FIELD_WIDTH/2 - GOAL_DEPTH, -GOAL_WIDTH/2);
+	vector<Point2f> pts_goal1_image;
+	perspectiveTransform(pts_goal1_world, pts_goal1_image, homography.inv());
+
+	vector<Point2f> pts_goal2_world = vector<Point2f>(4);
+	pts_goal2_world[0] = Point2f(FIELD_WIDTH/2 + GOAL_DEPTH, GOAL_WIDTH/2);
+	pts_goal2_world[1] = Point2f(FIELD_WIDTH/2,              GOAL_WIDTH/2);
+	pts_goal2_world[2] = Point2f(FIELD_WIDTH/2,              -GOAL_WIDTH/2);
+	pts_goal2_world[3] = Point2f(FIELD_WIDTH/2 + GOAL_DEPTH, -GOAL_WIDTH/2);
+	vector<Point2f> pts_goal2_image;
+	perspectiveTransform(pts_goal2_world, pts_goal2_image, homography.inv());
+
+	// Convet points back to int (required for drawing functions)
+	pts_goal1 = vector<Point>(pts_goal1_image.size());
+	pts_goal2 = vector<Point>(pts_goal2_image.size());
+	for(int i = 0; i < pts_goal1_image.size(); i++)
+	{
+		pts_goal1[i] = Point(pts_goal1_image[i]);
+		pts_goal2[i] = Point(pts_goal2_image[i]);
+	}
 }
 
 void initPoints(Size imgSize)
@@ -310,10 +343,15 @@ void moveClosestPoint(Point clickPoint)
 
 void drawMask()
 {
+	mask = Mat(img.size(), CV_8UC1, Scalar(255));
+	
 	const Point* ppt[1] = { &points[0] };
 	int npt[] = { (int)points.size() };
-	mask = Mat(img.size(), CV_8UC1, Scalar(255));
 	fillPoly(mask, ppt, npt, 1, Scalar(0), CV_AA);
+
+	const Point* ppt_goals[2] = { &pts_goal1[0], &pts_goal2[0] };
+	int npt_goals[] = { (int)pts_goal1.size(), (int)pts_goal2.size() };
+	fillPoly(mask, ppt_goals, npt_goals, 2, Scalar(0), CV_AA);
 }
 
 void drawBorders(Mat result)
@@ -321,6 +359,10 @@ void drawBorders(Mat result)
 	const Point* ppt[1] = { &points[0] };
 	int npt[] = { (int)points.size() };
 	polylines(result, ppt, npt, 1, true, Scalar(0, 0, 255), 1, CV_AA);
+
+	const Point* ppt_goals[2] = { &pts_goal1[0], &pts_goal2[0] };
+	int npt_goals[] = { (int)pts_goal1.size(), (int)pts_goal2.size() };
+	polylines(result, ppt_goals, npt_goals, 2, true, Scalar(0, 255, 0), 1, CV_AA);
 }
 
 int mouseDown;
