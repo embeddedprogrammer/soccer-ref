@@ -32,6 +32,8 @@ class RefereeUI(object):
         self.btn_next_half = ui.btnNextHalf
         self.btn_reset_clock = ui.btnResetClock
         self.btn_start_game = ui.btnStartGame
+        self.btn_home_penalty = ui.btnHomePenalty
+        self.btn_away_penalty = ui.btnAwayPenalty
 
         # Score +/- buttons
         self.btn_home_inc_score = ui.btngoal_inc_home
@@ -164,6 +166,9 @@ class RefereeUI(object):
         self.btn_next_half.setEnabled(enable)
         self.btn_reset_clock.setEnabled(enable)
 
+        self.btn_home_penalty.setEnabled(enable)
+        self.btn_away_penalty.setEnabled(enable)
+
         self.btn_home_inc_score.setEnabled(enable)
         self.btn_home_dec_score.setEnabled(enable)
         self.btn_away_inc_score.setEnabled(enable)
@@ -205,6 +210,10 @@ class Referee(object):
         self.ui.btn_next_half.clicked.connect(self._btn_next_half)
         self.ui.btn_reset_clock.clicked.connect(self._btn_reset_clock)
         self.ui.btn_start_game.clicked.connect(self._btn_start_game)
+
+        # Penalty buttons
+        self.ui.btn_home_penalty.clicked.connect(lambda: self._handle_penalty(home=True))
+        self.ui.btn_away_penalty.clicked.connect(lambda: self._handle_penalty(home=False))
 
         # Score +/- buttons
         self.ui.btn_home_inc_score.clicked.connect(lambda: self._handle_score(home=True, inc=True))
@@ -293,6 +302,10 @@ class Referee(object):
 
             # We don't need to reset the field anymore
             self.game_state.reset_field = False
+
+            # we can also clear any penalties
+            self.game_state.home_penalty = False
+            self.game_state.away_penalty = False
 
             # Update the UI
             self.ui.btn_play.setText('Pause')
@@ -395,3 +408,12 @@ class Referee(object):
 
         # update the score UI
         self.ui.update_scores(self.game_state.home_score, self.game_state.away_score)
+
+
+    def _handle_penalty(self, home=True):
+        # reset the field
+        self._btn_reset_field()
+
+        # let the team know they need to reset in penalty mode
+        self.game_state.home_penalty = home
+        self.game_state.away_penalty = not home

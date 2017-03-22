@@ -29,6 +29,8 @@ int32 away_bot_count        #
 int32 remaining_seconds     # how many more seconds are remaining in this half?
 bool play                   # Play/Pause -- robots should freeze in place when false
 bool reset_field            # Robots should go to their home positions and freeze while true
+bool home_penalty           # If reset_field is true and my team (home/away) receives a penalty,
+bool away_penalty           #   then this will be true and my team should reset to penalty mode
 bool second_half            # Second half of match. Robots should switch sides.
 ```
 
