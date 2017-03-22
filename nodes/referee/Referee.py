@@ -1,5 +1,7 @@
 from PyQt4 import QtGui, QtCore
 
+import math
+
 import rospy, rostopic
 from soccerref.msg import GameState
 from geometry_msgs.msg import Pose2D
@@ -113,7 +115,7 @@ class RefereeUI(object):
 
     def get_timer_seconds(self):
         ms = self.game_timer['milliseconds']
-        return ms/1000
+        return int(math.ceil(ms/1000.0))
 
     def update_timer_ui(self):
         ms = self.game_timer['milliseconds']
@@ -269,14 +271,9 @@ class Referee(object):
             self.ballIsStillInGoal = True
 
             # Now lets decide who gets the point, based off home/away and which half we are on
-            if home_side ^ self.game_state.second_half:
-                self.game_state.away_score += 1
-
-            elif away_side ^ self.game_state.second_half:
-                self.game_state.home_score += 1
-
-            # Update UI
-            self.ui.update_scores(self.game_state.home_score, self.game_state.away_score)
+            home = away_side ^ self.game_state.second_half
+            inc = True
+            self._handle_score(home=home, inc=inc)
 
         # If last we knew, the ball was in the goal but now it's not, update that
         if self.ballIsStillInGoal and abs(msg.x) < out_of_goal_threshold:
@@ -400,6 +397,9 @@ class Referee(object):
                 
 
     def _handle_score(self, home=True, inc=True):
+        # reset the field
+        self._btn_reset_field()
+
         # update the global state
         if home:
             self.game_state.home_score += 1 if inc else -1
