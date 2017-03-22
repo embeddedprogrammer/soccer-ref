@@ -1,5 +1,7 @@
 from PyQt4 import QtGui, QtCore
 
+import math
+
 import rospy, rostopic
 from soccerref.msg import GameState
 from geometry_msgs.msg import Pose2D
@@ -32,6 +34,8 @@ class RefereeUI(object):
         self.btn_next_half = ui.btnNextHalf
         self.btn_reset_clock = ui.btnResetClock
         self.btn_start_game = ui.btnStartGame
+        self.btn_home_penalty = ui.btnHomePenalty
+        self.btn_away_penalty = ui.btnAwayPenalty
 
         # Score +/- buttons
         self.btn_home_inc_score = ui.btngoal_inc_home
@@ -111,7 +115,7 @@ class RefereeUI(object):
 
     def get_timer_seconds(self):
         ms = self.game_timer['milliseconds']
-        return ms/1000
+        return int(math.ceil(ms/1000.0))
 
     def update_timer_ui(self):
         ms = self.game_timer['milliseconds']
@@ -164,6 +168,9 @@ class RefereeUI(object):
         self.btn_next_half.setEnabled(enable)
         self.btn_reset_clock.setEnabled(enable)
 
+        self.btn_home_penalty.setEnabled(enable)
+        self.btn_away_penalty.setEnabled(enable)
+
         self.btn_home_inc_score.setEnabled(enable)
         self.btn_home_dec_score.setEnabled(enable)
         self.btn_away_inc_score.setEnabled(enable)
@@ -205,6 +212,10 @@ class Referee(object):
         self.ui.btn_next_half.clicked.connect(self._btn_next_half)
         self.ui.btn_reset_clock.clicked.connect(self._btn_reset_clock)
         self.ui.btn_start_game.clicked.connect(self._btn_start_game)
+
+        # Penalty buttons
+        self.ui.btn_home_penalty.clicked.connect(lambda: self._handle_penalty(home=True))
+        self.ui.btn_away_penalty.clicked.connect(lambda: self._handle_penalty(home=False))
 
         # Score +/- buttons
         self.ui.btn_home_inc_score.clicked.connect(lambda: self._handle_score(home=True, inc=True))
@@ -260,14 +271,9 @@ class Referee(object):
             self.ballIsStillInGoal = True
 
             # Now lets decide who gets the point, based off home/away and which half we are on
-            if home_side ^ self.game_state.second_half:
-                self.game_state.away_score += 1
-
-            elif away_side ^ self.game_state.second_half:
-                self.game_state.home_score += 1
-
-            # Update UI
-            self.ui.update_scores(self.game_state.home_score, self.game_state.away_score)
+            home = away_side ^ self.game_state.second_half
+            inc = True
+            self._handle_score(home=home, inc=inc)
 
         # If last we knew, the ball was in the goal but now it's not, update that
         if self.ballIsStillInGoal and abs(msg.x) < out_of_goal_threshold:
@@ -293,6 +299,10 @@ class Referee(object):
 
             # We don't need to reset the field anymore
             self.game_state.reset_field = False
+
+            # we can also clear any penalties
+            self.game_state.home_penalty = False
+            self.game_state.away_penalty = False
 
             # Update the UI
             self.ui.btn_play.setText('Pause')
@@ -374,8 +384,11 @@ class Referee(object):
                 # Send a kill signal to all the process groups
                 os.killpg(os.getpgid(self.process.pid), signal.SIGTERM)
 
-            # reset clock, stop play
-            self.ui.stop_timer()                
+            # stop play
+            self.game_state.play = False
+
+            # reset clock
+            self.ui.stop_timer()
             
             # Update UI
             self.ui.enable_team_settings(True)
@@ -384,6 +397,9 @@ class Referee(object):
                 
 
     def _handle_score(self, home=True, inc=True):
+        # reset the field
+        self._btn_reset_field()
+
         # update the global state
         if home:
             self.game_state.home_score += 1 if inc else -1
@@ -392,3 +408,12 @@ class Referee(object):
 
         # update the score UI
         self.ui.update_scores(self.game_state.home_score, self.game_state.away_score)
+
+
+    def _handle_penalty(self, home=True):
+        # reset the field
+        self._btn_reset_field()
+
+        # let the team know they need to reset in penalty mode
+        self.game_state.home_penalty = home
+        self.game_state.away_penalty = not home
