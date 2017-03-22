@@ -374,8 +374,11 @@ class Referee(object):
                 # Send a kill signal to all the process groups
                 os.killpg(os.getpgid(self.process.pid), signal.SIGTERM)
 
-            # reset clock, stop play
-            self.ui.stop_timer()                
+            # stop play
+            self.game_state.play = False
+
+            # reset clock
+            self.ui.stop_timer()
             
             # Update UI
             self.ui.enable_team_settings(True)
