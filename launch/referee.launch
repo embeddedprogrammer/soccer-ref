@@ -6,7 +6,9 @@
     <arg name="use_timer" default="true" />
     <arg name="simulation_mode" default="false" />
     <arg name="competition_mode" default="false" />
+    <arg name="camera" default="home" />
 
+    <!-- referee -->
     <node name="referee" pkg="soccerref" type="referee_node.py" output="screen">
         <param name="half_duration_secs" type="int" value="$(arg half_duration_secs)" />
         <param name="use_timer" type="bool" value="$(arg use_timer)" />
@@ -14,4 +16,10 @@
         <param name="competition_mode" type="bool" value="$(arg competition_mode)" />
     </node>
 
+    <!-- vision (only if not in simulation mode) -->
+    <group unless="$(arg simulation_mode)">
+        <node name="soccerref_vision" pkg="soccerref" type="soccerref_vision" output="screen">
+            <remap from="/camera1/image_raw" to="/usb_cam_$(arg camera)/image_raw" />
+        </node>
+    </group>
 </launch>
