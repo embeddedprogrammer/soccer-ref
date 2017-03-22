@@ -187,7 +187,7 @@ class Referee(object):
         self.ui = RefereeUI(ui, sim_mode, use_timer, competition_mode)
 
         # Connect to ROS things
-        ball_topic = '/ball/truth' if sim_mode else '/vision/ball' # TODO: Create a ref-vision node?
+        ball_topic = '/ball/truth' if sim_mode else '/vision/ball'
         rospy.Subscriber(ball_topic, Pose2D, self._handle_vision_ball)
         
         self.pub_game_state = rospy.Publisher('game_state', GameState, queue_size=10, latch=True)
