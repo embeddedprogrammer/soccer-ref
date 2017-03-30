@@ -233,19 +233,19 @@ void imageCallback(const sensor_msgs::ImageConstPtr& msg)
 void initThresholds()
 {
 	ros::NodeHandle nh;
-	nh.param<int>("/soccerref_vision/ball_color/hue", ballColor[0], 32);
-	nh.param<int>("/soccerref_vision/ball_color/sat", ballColor[1], 57);
-	nh.param<int>("/soccerref_vision/ball_color/val", ballColor[2], 236);
-	nh.param<int>("/soccerref_vision/ball_color/dist", distThreshold, 30);
+	nh.param<int>("soccerref_vision/ball_color/hue", ballColor[0], 32);
+	nh.param<int>("soccerref_vision/ball_color/sat", ballColor[1], 57);
+	nh.param<int>("soccerref_vision/ball_color/val", ballColor[2], 236);
+	nh.param<int>("soccerref_vision/ball_color/dist", distThreshold, 30);
 }
 
 void saveThresholds()
 {
 	ros::NodeHandle nh;
-	nh.setParam("/soccerref_vision/ball_color/hue", ballColor[0]);
-	nh.setParam("/soccerref_vision/ball_color/sat", ballColor[1]);
-	nh.setParam("/soccerref_vision/ball_color/val", ballColor[2]);
-	nh.setParam("/soccerref_vision/ball_color/dist", distThreshold);
+	nh.setParam("soccerref_vision/ball_color/hue", ballColor[0]);
+	nh.setParam("soccerref_vision/ball_color/sat", ballColor[1]);
+	nh.setParam("soccerref_vision/ball_color/val", ballColor[2]);
+	nh.setParam("soccerref_vision/ball_color/dist", distThreshold);
 }
 
 void calcHomography()
@@ -306,7 +306,7 @@ void initPoints(Size imgSize)
 	for(int i = 0; i < points.size(); i++)
 	{
 		char buffer[50];
-		sprintf(buffer, "/soccerref_vision/field_bounds/corner%d", i);
+		sprintf(buffer, "soccerref_vision/field_bounds/corner%d", i);
 		string prefix = string(buffer);
 		nh.param<int>(prefix + "/x", points[i].x, points[i].x);
 		nh.param<int>(prefix + "/y", points[i].y, points[i].y);
@@ -320,7 +320,7 @@ void savePoints()
 	for(int i = 0; i < points.size(); i++)
 	{
 		char buffer[50];
-		sprintf(buffer, "/soccerref_vision/field_bounds/corner%d", i);
+		sprintf(buffer, "soccerref_vision/field_bounds/corner%d", i);
 		string prefix = string(buffer);
 		nh.setParam(prefix + "/x", points[i].x);
 		nh.setParam(prefix + "/y", points[i].y);
@@ -412,7 +412,7 @@ int main(int argc, char **argv)
 	image_transport::Subscriber image_sub = it.subscribe("/camera1/image_raw", 1, imageCallback);
 
 	// Create Ball Publisher
-	ball_pub = nh.advertise<geometry_msgs::Pose2D>("/vision/ball", 5);
+	ball_pub = nh.advertise<geometry_msgs::Pose2D>("vision/ball", 5);
 	ros::spin();
 	savePoints();
 	saveThresholds();
